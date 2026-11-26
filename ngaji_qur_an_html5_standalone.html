@@ -1,0 +1,2734 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ngaji Qur'an – Belajar Membaca Al-Qur'an dari Nol (HTML5)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            emeraldDeep: '#064e3b',
+            emeraldMain: '#047857',
+            emeraldSoft: '#ecfdf5',
+            creamBg: '#faf8f5',
+            goldAccent: '#d97706',
+            goldSoft: '#fef3c7'
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            arabic: ['Amiri', 'serif']
+          }
+        }
+      }
+    };
+
+    /* Logo SVG Islami bawaan yang ringan dan selalu tampil */
+    const DEFAULT_LOGO_SVG = `
+      <svg viewBox="0 0 64 64" class="w-full h-full p-1.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="32" r="30" fill="#064e3b" stroke="#d97706" stroke-width="2.5"/>
+        <path d="M16 42C22 39 28 39 32 43C36 39 42 39 48 42V24C42 21 36 21 32 25C28 21 22 21 16 24V42Z" fill="#faf8f5" stroke="#d97706" stroke-width="2"/>
+        <line x1="32" y1="25" x2="32" y2="43" stroke="#d97706" stroke-width="2"/>
+        <path d="M32 11C30 14 30 17 32 19C34 17 34 14 32 11Z" fill="#fbbf24"/>
+      </svg>`;
+
+    function getLogoMarkup() {
+      let customLogo = '';
+      try {
+        customLogo = localStorage.getItem('ngaji_quran_custom_logo') || '';
+      } catch (e) {}
+      if (customLogo) {
+        return `<img src="${customLogo}" alt="Logo Ngaji Qur'an" class="w-full h-full object-cover" onerror="handleLogoFallback(this)" />`;
+      }
+      return DEFAULT_LOGO_SVG;
+    }
+
+    function handleLogoFallback(imgEl) {
+      if (!imgEl || !imgEl.parentElement) return;
+      imgEl.onerror = null;
+      imgEl.parentElement.innerHTML = DEFAULT_LOGO_SVG;
+    }
+
+    function refreshAllLogoSlots() {
+      document.querySelectorAll('.logo-slot').forEach(slot => {
+        slot.innerHTML = getLogoMarkup();
+      });
+    }
+
+    /* Helper sanitasi HTML & JS string agar aman pada atribut onclick */
+    function escHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escJs(str) {
+      return String(str == null ? '' : str)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '&quot;')
+        .replace(/\r?\n/g, ' ');
+    }
+  </script>
+  <style>
+    :root {
+      --arab-scale: 1;
+    }
+    body {
+      background-color: #faf8f5;
+      color: #1e293b;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .arabic-text {
+      font-family: 'Amiri', serif;
+      direction: rtl;
+      line-height: 2.1;
+      font-size: calc(2.1rem * var(--arab-scale));
+    }
+    .arabic-hero {
+      font-family: 'Amiri', serif;
+      direction: rtl;
+      line-height: 1.6;
+      font-size: calc(4.2rem * var(--arab-scale));
+    }
+    .arabic-md {
+      font-family: 'Amiri', serif;
+      direction: rtl;
+      line-height: 1.9;
+      font-size: calc(1.65rem * var(--arab-scale));
+    }
+    .btn-large {
+      min-height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      border-radius: 0.85rem;
+      transition: all 0.15s ease;
+    }
+    .btn-large:active {
+      transform: scale(0.98);
+    }
+    .nav-item.active {
+      background-color: #047857;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(4, 120, 87, 0.2);
+    }
+    .nav-item:not(.active):hover {
+      background-color: #ecfdf5;
+      color: #064e3b;
+    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row">
+
+  <!-- MOBILE HEADER -->
+  <header class="md:hidden sticky top-0 z-40 bg-white border-b border-emerald-100 px-4 py-3 flex items-center justify-between shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="logo-slot w-10 h-10 rounded-full overflow-hidden border-2 border-emerald-600 bg-emerald-50 flex items-center justify-center shrink-0"></div>
+      <div>
+        <div class="font-extrabold text-emerald-900 text-base leading-tight">Ngaji Qur'an</div>
+        <div class="text-xs text-slate-500">Belajar dari Nol</div>
+      </div>
+    </div>
+    <button onclick="toggleMobileMenu()" class="min-h-[44px] min-w-[44px] px-3 rounded-xl bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">
+      ☰ Menu
+    </button>
+  </header>
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside id="sidebar" class="fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-white border-r border-emerald-100 flex flex-col transform -translate-x-full md:translate-x-0 transition-transform duration-200 shadow-lg md:shadow-none">
+    <div class="p-5 border-b border-emerald-100 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="logo-slot w-14 h-14 rounded-full overflow-hidden border-2 border-amber-500 bg-emerald-50 flex items-center justify-center shrink-0 shadow-sm"></div>
+        <div>
+          <h1 class="font-extrabold text-lg text-emerald-950 leading-tight">NGAJI QUR'AN</h1>
+          <p class="text-xs font-medium text-amber-700">Belajar • Membaca • Memahami</p>
+        </div>
+      </div>
+      <button onclick="toggleMobileMenu()" class="md:hidden text-slate-500 text-2xl font-bold px-2">&times;</button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto p-3 space-y-1.5" id="main-nav">
+      <button onclick="navigateTo('beranda')" data-page="beranda" class="nav-item active w-full text-left px-4 py-3 rounded-xl font-semibold text-base flex items-center gap-3">
+        <span class="text-xl">🏠</span> Beranda
+      </button>
+      <button onclick="navigateTo('belajar')" data-page="belajar" class="nav-item w-full text-left px-4 py-3 rounded-xl font-semibold text-base flex items-center gap-3">
+        <span class="text-xl">📖</span> Belajar Mengaji
+      </button>
+      <button onclick="navigateTo('hijaiyah')" data-page="hijaiyah" class="nav-item w-full text-left px-4 py-3 rounded-xl font-semibold text-base flex items-center gap-3">
+        <span class="text-xl">🔤</span> Huruf Hijaiyah
+      </button>
+      <button onclick="navigateTo('latihan')" data-page="latihan" class="nav-item w-full text-left px-4 py-3 rounded-xl font-semibold text-base flex items-center gap-3">
+        <span class="text-xl">🔊</span> Latihan Bacaan
+      </button>
+      <button onclick="navigateTo('tajwid')" data-page="tajwid" class="nav-item w-full text-left px-4 py-3 rounded-xl font-semibold text-base flex items-center gap-3">
+        <span class="text-xl">📚</span> Tajwid
+      </button>
+      <button onclick="navigateTo('setoran')" data-page="setoran" class="nav-item w-full text-left px-4 py-3 rounded-xl font-semibold text-base flex items-center gap-3">
+        <span class="text-xl">🎙️</span> Setoran Bacaan
+      </button>
+      <button onclick="navigateTo('progress')" data-page="progress" class="nav-item w-full text-left px-4 py-3 rounded-xl font-semibold text-base flex items-center gap-3">
+        <span class="text-xl">📈</span> Progress Saya
+      </button>
+      <button onclick="navigateTo('prestasi')" data-page="prestasi" class="nav-item w-full text-left px-4 py-3 rounded-xl font-semibold text-base flex items-center gap-3">
+        <span class="text-xl">🏆</span> Prestasi
+      </button>
+      <button onclick="navigateTo('guru')" data-page="guru" class="nav-item w-full text-left px-4 py-3 rounded-xl font-semibold text-base flex items-center gap-3">
+        <span class="text-xl">👨‍🏫</span> Guru/Murobbi
+      </button>
+      <button onclick="navigateTo('pengaturan')" data-page="pengaturan" class="nav-item w-full text-left px-4 py-3 rounded-xl font-semibold text-base flex items-center gap-3">
+        <span class="text-xl">⚙️</span> Pengaturan
+      </button>
+    </nav>
+
+    <div class="p-4 border-t border-emerald-100 bg-emerald-50/60">
+      <div class="flex items-center justify-between text-sm">
+        <span class="font-bold text-emerald-900 truncate max-w-[150px]" id="sidebar-username">Sahabat Qur'an</span>
+        <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-xs shrink-0" id="sidebar-streak">🔥 1 Hari</span>
+      </div>
+      <p class="text-xs text-slate-600 mt-1" id="sidebar-level">Level Saat Ini: Level 1</p>
+      <p class="text-[11px] font-semibold text-emerald-700 mt-1">💾 HTML5 Offline-Ready</p>
+    </div>
+  </aside>
+
+  <!-- OVERLAY MOBILE -->
+  <div id="mobile-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-slate-900/40 z-40 hidden md:hidden"></div>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto w-full pb-36">
+    <!-- BAR STATUS PERANGKAT (AUDIO & MIKROFON) -->
+    <div id="device-perm-bar" class="mb-5 bg-white border border-emerald-200 rounded-2xl px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <span id="mic-status-dot" class="w-3 h-3 rounded-full bg-amber-400 inline-block shrink-0"></span>
+        <div class="text-xs sm:text-sm">
+          <span class="font-bold text-emerald-950">Audio & Mikrofon:</span>
+          <span id="mic-status-text" class="text-slate-600">Tekan tombol di kanan agar audio & mikrofon aktif di HP/PC Anda.</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="requestDevicePermissions()" class="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center gap-1.5 transition">
+          🎙️ Aktifkan Audio & Mic
+        </button>
+        <button onclick="testAudioSpeaker()" class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 font-bold text-xs">
+          🔊 Tes Suara
+        </button>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFIKASI -->
+    <div id="toast-box" class="fixed bottom-24 right-5 z-50 hidden bg-emerald-900 text-white px-5 py-3.5 rounded-2xl shadow-xl font-semibold text-sm max-w-sm"></div>
+
+    <!-- CONTAINER HALAMAN DINAMIS -->
+    <div id="page-content"></div>
+  </main>
+
+  <!-- GLOBAL AUDIO PLAYBACK BAR -->
+  <div id="global-audio-bar" class="fixed bottom-0 left-0 md:left-72 right-0 z-40 hidden bg-emerald-950 text-white border-t-2 border-amber-500 px-4 py-3 shadow-2xl">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center gap-3">
+      <div class="flex items-center gap-3 w-full sm:w-auto flex-1 min-w-0">
+        <button id="gap-play-btn" onclick="toggleGlobalAudio()" class="w-11 h-11 rounded-full bg-amber-500 hover:bg-amber-400 text-emerald-950 font-extrabold text-lg flex items-center justify-center shrink-0">
+          ⏸
+        </button>
+        <div class="min-w-0 flex-1">
+          <div id="gap-title" class="font-bold text-sm truncate text-amber-300">Memutar Bacaan...</div>
+          <div class="flex items-center gap-2 mt-1">
+            <span id="gap-time-cur" class="text-[11px] text-emerald-200 font-mono">0:00</span>
+            <input id="gap-seek" type="range" min="0" max="100" value="0" oninput="seekGlobalAudio(this.value)" class="flex-1 h-1.5 accent-amber-400 cursor-pointer" />
+            <span id="gap-time-dur" class="text-[11px] text-emerald-200 font-mono">0:00</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="gap-loop-btn" onclick="toggleGlobalLoop()" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold border border-white/20" title="Ulangi terus">
+          🔁 Ulangi
+        </button>
+        <button onclick="cycleGlobalSpeed()" id="gap-speed-btn" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold border border-white/20">
+          1.0x
+        </button>
+        <button onclick="stopAllAudio()" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-xs font-bold">
+          ⏹ Stop
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ELEMEN AUDIO UTAMA HTML5 -->
+  <audio id="quran-audio-el" preload="auto" playsinline></audio>
+
+  <!-- MODAL TES AWAL (LEVEL 10) -->
+  <div id="modal-placement" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border-2 border-emerald-100 my-auto">
+      <div class="text-center mb-6">
+        <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs mb-2">EVALUASI AWAL</span>
+        <h2 class="text-2xl font-extrabold text-emerald-950">Bagaimana kemampuan membaca Al-Qur'an Anda?</h2>
+        <p class="text-slate-600 mt-2 text-base">Pilih jawaban yang paling jujur. Tidak perlu malu, kami akan membimbing Anda perlahan dari titik awal yang paling nyaman.</p>
+      </div>
+      <div class="space-y-3">
+        <button onclick="applyPlacement('A')" class="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50 transition flex items-start gap-3">
+          <span class="w-8 h-8 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center shrink-0">A</span>
+          <div>
+            <div class="font-bold text-slate-900 text-base">Saya belum mengenal huruf hijaiyah.</div>
+            <div class="text-sm text-slate-500">Mulai dari Level 1 (Pengenalan Huruf Alif sampai Ya)</div>
+          </div>
+        </button>
+        <button onclick="applyPlacement('B')" class="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50 transition flex items-start gap-3">
+          <span class="w-8 h-8 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center shrink-0">B</span>
+          <div>
+            <div class="font-bold text-slate-900 text-base">Saya mengenal huruf hijaiyah tetapi belum bisa membaca.</div>
+            <div class="text-sm text-slate-500">Mulai dari Level 2 (Belajar Harakat & Menyambung Huruf)</div>
+          </div>
+        </button>
+        <button onclick="applyPlacement('C')" class="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50 transition flex items-start gap-3">
+          <span class="w-8 h-8 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center shrink-0">C</span>
+          <div>
+            <div class="font-bold text-slate-900 text-base">Saya bisa membaca tetapi masih terbata-bata.</div>
+            <div class="text-sm text-slate-500">Mulai dari Level 5 (Program Khusus Lancar Mengaji)</div>
+          </div>
+        </button>
+        <button onclick="applyPlacement('D')" class="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50 transition flex items-start gap-3">
+          <span class="w-8 h-8 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center shrink-0">D</span>
+          <div>
+            <div class="font-bold text-slate-900 text-base">Saya bisa membaca tetapi belum memahami tajwid.</div>
+            <div class="text-sm text-slate-500">Mulai dari Level 8 (Pembelajaran Tajwid Dasar Praktis)</div>
+          </div>
+        </button>
+        <button onclick="applyPlacement('E')" class="w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-emerald-600 hover:bg-emerald-50 transition flex items-start gap-3">
+          <span class="w-8 h-8 rounded-full bg-emerald-700 text-white font-bold flex items-center justify-center shrink-0">E</span>
+          <div>
+            <div class="font-bold text-slate-900 text-base">Saya sudah bisa membaca dan ingin meningkatkan tahsin.</div>
+            <div class="text-sm text-slate-500">Mulai dari Level 7 (Program Tahsin & Makharijul Huruf)</div>
+          </div>
+        </button>
+      </div>
+      <div class="mt-5 text-center">
+        <button onclick="closePlacementModal()" class="text-sm text-slate-500 underline font-semibold">Nanti saja, masuk ke Beranda</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ============================================================================
+ * 1. DATA KURIKULUM AKURAT (HIJAIYAH, HARAKAT, SURAH, MAKHRAJ, TAHSIN, TAJWID)
+ * ============================================================================ */
+
+const STORAGE_KEY = 'ngaji_quran_html5_v2';
+
+const MOTIVATIONS = [
+  "Jangan malu belajar mengaji. Setiap huruf yang kamu baca adalah kebaikan.",
+  "Sedikit tetapi rutin lebih baik daripada banyak tetapi jarang.",
+  "Teruslah belajar. Kesalahan dalam belajar bukan alasan untuk berhenti.",
+  "Orang yang terbata-bata membaca Al-Qur'an dan bersungguh-sungguh belajarnya, baginya dua pahala.",
+  "Setiap langkah kecil hari ini mendekatkan Anda pada bacaan Al-Qur'an yang indah dan tenang."
+];
+
+const HIJAIYAH_DATA = [
+  { char: 'ا', name: 'Alif', forms: ['ا','ا','ـا','ـا'], makhraj: 'Rongga mulut & tenggorokan (Al-Jauf) sebagai huruf mad', mirip: 'ل (Lam)', ex: 'اَ – اِ – اُ' },
+  { char: 'ب', name: 'Ba', forms: ['ب','بـ','ـبـ','ـب'], makhraj: 'Dua bibir dirapatkan (Asy-Syafatain)', mirip: 'ت، ث (beda titik)', ex: 'بَ – بِ – بُ' },
+  { char: 'ت', name: 'Ta', forms: ['ت','تـ','ـتـ','ـت'], makhraj: 'Ujung lidah menempel pangkal gigi seri atas', mirip: 'ب، ث، ط', ex: 'تَ – تِ – تُ' },
+  { char: 'ث', name: 'Tsa', forms: ['ث','ثـ','ـثـ','ـث'], makhraj: 'Ujung lidah sedikit keluar bertemu ujung gigi seri atas', mirip: 'س، ص', ex: 'ثَ – ثِ – ثُ' },
+  { char: 'ج', name: 'Jim', forms: ['ج','جـ','ـجـ','ـج'], makhraj: 'Tengah lidah menempel langit-langit atas', mirip: 'ح، خ', ex: 'جَ – جِ – جُ' },
+  { char: 'ح', name: 'Ha', forms: ['ح','حـ','ـحـ','ـح'], makhraj: 'Tengah tenggorokan, suara bersih tanpa serak', mirip: 'ج، خ، ه', ex: 'حَ – حِ – حُ' },
+  { char: 'خ', name: 'Kha', forms: ['خ','خـ','ـخـ','ـخ'], makhraj: 'Ujung tenggorokan atas, terdengar sedikit gesekan', mirip: 'ج، ح', ex: 'خَ – خِ – خُ' },
+  { char: 'د', name: 'Dal', forms: ['د','د','ـد','ـد'], makhraj: 'Ujung lidah menempel pangkal gigi seri atas', mirip: 'ذ', ex: 'دَ – دِ – دُ' },
+  { char: 'ذ', name: 'Dzal', forms: ['ذ','ذ','ـذ','ـذ'], makhraj: 'Ujung lidah bertemu ujung gigi seri atas (lembut)', mirip: 'د، ز، ظ', ex: 'ذَ – ذِ – ذُ' },
+  { char: 'ر', name: 'Ra', forms: ['ر','ر','ـر','ـر'], makhraj: 'Punggung ujung lidah menyentuh gusi atas', mirip: 'ز', ex: 'رَ – رِ – رُ' },
+  { char: 'ز', name: 'Zai', forms: ['ز','ز','ـز','ـز'], makhraj: 'Ujung lidah dekat gigi seri bawah, berdesis', mirip: 'ر، ذ', ex: 'زَ – زِ – زُ' },
+  { char: 'س', name: 'Sin', forms: ['س','سـ','ـسـ','ـس'], makhraj: 'Ujung lidah dekat gigi seri bawah, desis tipis', mirip: 'ش، ث، ص', ex: 'سَ – سِ – سُ' },
+  { char: 'ش', name: 'Syin', forms: ['ش','شـ','ـشـ','ـش'], makhraj: 'Tengah lidah, angin menyebar di dalam mulut', mirip: 'س', ex: 'شَ – شِ – شُ' },
+  { char: 'ص', name: 'Shad', forms: ['ص','صـ','ـصـ','ـص'], makhraj: 'Ujung lidah dekat gigi bawah, pangkal lidah terangkat (tebal)', mirip: 'س، ض', ex: 'صَ – صِ – صُ' },
+  { char: 'ض', name: 'Dhad', forms: ['ض','ضـ','ـضـ','ـض'], makhraj: 'Tepi lidah menekan gigi geraham atas (tebal)', mirip: 'ص، ظ', ex: 'ضَ – ضِ – ضُ' },
+  { char: 'ط', name: 'Tha', forms: ['ط','طـ','ـطـ','ـط'], makhraj: 'Ujung lidah ke pangkal gigi atas, suara tebal', mirip: 'ت، ظ', ex: 'طَ – طِ – طُ' },
+  { char: 'ظ', name: 'Zha', forms: ['ظ','ظـ','ـظـ','ـظ'], makhraj: 'Ujung lidah ke ujung gigi atas, pangkal lidah naik (tebal)', mirip: 'ذ، ض، ط', ex: 'ظَ – ظِ – ظُ' },
+  { char: 'ع', name: 'Ain', forms: ['ع','عـ','ـعـ','ـع'], makhraj: 'Tengah tenggorokan, mengalir lembut', mirip: 'غ، ء', ex: 'عَ – عِ – عُ' },
+  { char: 'غ', name: 'Ghain', forms: ['غ','غـ','ـغـ','ـغ'], makhraj: 'Tenggorokan bagian atas, seperti berkumur halus', mirip: 'ع', ex: 'غَ – غِ – غُ' },
+  { char: 'ف', name: 'Fa', forms: ['ف','فـ','ـفـ','ـف'], makhraj: 'Perut bibir bawah bertemu ujung gigi seri atas', mirip: 'ق', ex: 'فَ – فِ – فُ' },
+  { char: 'ق', name: 'Qaf', forms: ['ق','قـ','ـقـ','ـق'], makhraj: 'Pangkal lidah paling belakang menempel langit-langit lunak', mirip: 'ف، ك', ex: 'قَ – قِ – قُ' },
+  { char: 'ك', name: 'Kaf', forms: ['ك','كـ','ـكـ','ـك'], makhraj: 'Pangkal lidah sedikit lebih depan dari Qaf', mirip: 'ق، ل', ex: 'كَ – كِ – كُ' },
+  { char: 'ل', name: 'Lam', forms: ['ل','لـ','ـلـ','ـل'], makhraj: 'Tepi ujung lidah menempel gusi gigi atas', mirip: 'ا، ك', ex: 'لَ – لِ – لُ' },
+  { char: 'م', name: 'Mim', forms: ['م','مـ','ـمـ','ـم'], makhraj: 'Dua bibir dirapatkan disertai dengung ringan di hidung', mirip: 'ن', ex: 'مَ – مِ – مُ' },
+  { char: 'ن', name: 'Nun', forms: ['ن','نـ','ـنـ','ـن'], makhraj: 'Ujung lidah ke gusi atas disertai dengung ringan', mirip: 'ب، م', ex: 'نَ – نِ – نُ' },
+  { char: 'و', name: 'Waw', forms: ['و','و','ـو','ـو'], makhraj: 'Dua bibir dimonyongkan membulat', mirip: 'ر', ex: 'وَ – وِ – وُ' },
+  { char: 'ه', name: 'Ha (besar)', forms: ['ه','هـ','ـهـ','ـه'], makhraj: 'Pangkal tenggorokan paling bawah (dada terasa ringan)', mirip: 'ح', ex: 'هَ – هِ – هُ' },
+  { char: 'ء', name: 'Hamzah', forms: ['ء','أ','ـئـ','ـأ'], makhraj: 'Pangkal tenggorokan, berhenti tegas', mirip: 'ع', ex: 'أَ – إِ – أُ' },
+  { char: 'ي', name: 'Ya', forms: ['ي','يـ','ـيـ','ـي'], makhraj: 'Tengah lidah diangkat ke langit-langit', mirip: 'ب، ت', ex: 'يَ – يِ – يُ' }
+];
+
+const HARAKAT_DATA = [
+  { name: 'Fathah', symbol: 'ـَ', sound: 'a', desc: 'Garis miring di atas huruf. Membunyikan vokal "a".', ex: 'بَ (ba) – تَ (ta) – ثَ (tsa) – جَ (ja)', sampleArab: 'بَ تَ ثَ جَ' },
+  { name: 'Kasrah', symbol: 'ـِ', sound: 'i', desc: 'Garis miring di bawah huruf. Membunyikan vokal "i".', ex: 'بِ (bi) – تِ (ti) – ثِ (tsi) – جِ (ji)', sampleArab: 'بِ تِ ثِ جِ' },
+  { name: 'Dhammah', symbol: 'ـُ', sound: 'u', desc: 'Seperti huruf waw kecil di atas huruf. Membunyikan vokal "u".', ex: 'بُ (bu) – تُ (tu) – ثُ (tsu) – جُ (ju)', sampleArab: 'بُ تُ ثُ جُ' },
+  { name: 'Fathatain', symbol: 'ـً', sound: 'an', desc: 'Dua garis di atas huruf. Membunyikan akhiran "-an".', ex: 'بًا (ban) – تًا (tan) – كِتَابًا (kitaaban)', sampleArab: 'بًا تًا ثًا جًا' },
+  { name: 'Kasratain', symbol: 'ـٍ', sound: 'in', desc: 'Dua garis di bawah huruf. Membunyikan akhiran "-in".', ex: 'بٍ (bin) – تٍ (tin) – يَوْمٍ (yaumin)', sampleArab: 'بٍ تٍ ثٍ جٍ' },
+  { name: 'Dhammatain', symbol: 'ـٌ', sound: 'un', desc: 'Dua dhammah di atas huruf. Membunyikan akhiran "-un".', ex: 'بٌ (bun) – تٌ (tun) – أَحَدٌ (ahadun)', sampleArab: 'بٌ تٌ ثٌ جٌ' },
+  { name: 'Sukun', symbol: 'ـْ', sound: 'mati', desc: 'Tanda bulat/kepala ha kecil di atas huruf. Huruf dibaca mati.', ex: 'أَبْ (ab) – مَنْ (man) – قُلْ (qul)', sampleArab: 'أَبْ مَنْ قُلْ لَمْ' },
+  { name: 'Tasydid', symbol: 'ـّ', sound: 'ganda', desc: 'Seperti kepala huruf sin kecil. Huruf dibaca ditekan/ganda.', ex: 'رَبِّ (rabbi) – إِنَّ (inna) – حَقٌّ (haqqun)', sampleArab: 'رَبِّ إِنَّ تَبَّ' }
+];
+
+const CONNECT_DATA = [
+  { parts: 'ب + ا', result: 'بَا', read: 'baa', note: 'Ba menyambung ke kiri dengan Alif' },
+  { parts: 'م + ا', result: 'مَا', read: 'maa', note: 'Mim menyambung ke kiri dengan Alif' },
+  { parts: 'ك + ت + ب', result: 'كَتَبَ', read: 'kataba', note: 'Ketiga huruf saling menyambung' },
+  { parts: 'ق + ر + أ', result: 'قَرَأَ', read: 'qara-a', note: 'Ra tidak bisa menyambung huruf setelahnya' },
+  { parts: 'ف + ت + ح', result: 'فَتَحَ', read: 'fataha', note: 'Fa, Ta, dan Ha bersambung halus' },
+  { parts: 'ج + ل + س', result: 'جَلَسَ', read: 'jalasa', note: 'Jim, Lam, dan Sin bersambung menjadi satu kata' },
+  { parts: 'ع + ل + م', result: 'عَلِمَ', read: "'alima", note: 'Ain di awal, Lam di tengah, Mim di akhir' },
+  { parts: 'ن + ص + ر', result: 'نَصَرَ', read: 'nashara', note: 'Nun, Shad, dan Ra bersambung' }
+];
+
+const SURAHS_DATA = [
+  {
+    id: 'al-fatihah', surahNo: 1, name: 'Al-Fatihah', juz: 1, meaning: 'Pembukaan',
+    ayat: [
+      { no: 1, arab: 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ', latin: 'Bismillāhir-raḥmānir-raḥīm', id: 'Dengan nama Allah Yang Maha Pengasih lagi Maha Penyayang.', words: ['بِسْمِ', 'اللّٰهِ', 'الرَّحْمٰنِ', 'الرَّحِيْمِ'] },
+      { no: 2, arab: 'اَلْحَمْدُ لِلّٰهِ رَبِّ الْعٰلَمِيْنَ', latin: 'Al-ḥamdu lillāhi rabbil-‘ālamīn', id: 'Segala puji bagi Allah, Tuhan semesta alam.', words: ['اَلْحَمْدُ', 'لِلّٰهِ', 'رَبِّ', 'الْعٰلَمِيْنَ'] },
+      { no: 3, arab: 'الرَّحْمٰنِ الرَّحِيْمِ', latin: 'Ar-raḥmānir-raḥīm', id: 'Yang Maha Pengasih lagi Maha Penyayang,', words: ['الرَّحْمٰنِ', 'الرَّحِيْمِ'] },
+      { no: 4, arab: 'مٰلِكِ يَوْمِ الدِّيْنِ', latin: 'Māliki yaumid-dīn', id: 'Pemilik hari pembalasan.', words: ['مٰلِكِ', 'يَوْمِ', 'الدِّيْنِ'] },
+      { no: 5, arab: 'اِيَّاكَ نَعْبُدُ وَاِيَّاكَ نَسْتَعِيْنُ', latin: 'Iyyāka na‘budu wa iyyāka nasta‘īn', id: 'Hanya kepada Engkaulah kami menyembah dan hanya kepada Engkaulah kami mohon pertolongan.', words: ['اِيَّاكَ', 'نَعْبُدُ', 'وَاِيَّاكَ', 'نَسْتَعِيْنُ'] },
+      { no: 6, arab: 'اِهْدِنَا الصِّرَاطَ الْمُسْتَقِيْمَ', latin: 'Ihdinaṣ-ṣirāṭal-mustaqīm', id: 'Bimbinglah kami ke jalan yang lurus,', words: ['اِهْدِنَا', 'الصِّرَاطَ', 'الْمُسْتَقِيْمَ'] },
+      { no: 7, arab: 'صِرَاطَ الَّذِيْنَ اَنْعَمْتَ عَلَيْهِمْ ۙ غَيْرِ الْمَغْضُوْبِ عَلَيْهِمْ وَلَا الضَّۤالِّيْنَ', latin: 'Ṣirāṭallażīna an‘amta ‘alaihim gairil-magḍūbi ‘alaihim wa laḍ-ḍāllīn', id: '(yaitu) jalan orang-orang yang telah Engkau beri nikmat kepadanya; bukan (jalan) mereka yang dimurkai, dan bukan (pula jalan) mereka yang sesat.', words: ['صِرَاطَ', 'الَّذِيْنَ', 'اَنْعَمْتَ', 'عَلَيْهِمْ', 'غَيْرِ', 'الْمَغْضُوْبِ', 'عَلَيْهِمْ', 'وَلَا', 'الضَّۤالِّيْنَ'] }
+    ]
+  },
+  {
+    id: 'al-ikhlas', surahNo: 112, name: 'Al-Ikhlas', juz: 30, meaning: 'Memurnikan Keesaan Allah',
+    ayat: [
+      { no: 1, arab: 'قُلْ هُوَ اللّٰهُ اَحَدٌ', latin: 'Qul huwallāhu aḥad', id: 'Katakanlah (Nabi Muhammad), "Dialah Allah Yang Maha Esa.', words: ['قُلْ', 'هُوَ', 'اللّٰهُ', 'اَحَدٌ'] },
+      { no: 2, arab: 'اَللّٰهُ الصَّمَدُ', latin: 'Allāhuṣ-ṣamad', id: 'Allah tempat meminta segala sesuatu.', words: ['اَللّٰهُ', 'الصَّمَدُ'] },
+      { no: 3, arab: 'لَمْ يَلِدْ وَلَمْ يُوْلَدْ', latin: 'Lam yalid wa lam yūlad', id: 'Dia tidak beranak dan tidak pula diperanakkan,', words: ['لَمْ', 'يَلِدْ', 'وَلَمْ', 'يُوْلَدْ'] },
+      { no: 4, arab: 'وَلَمْ يَكُنْ لَّهٗ كُفُوًا اَحَدٌ', latin: 'Wa lam yakul lahū kufuwan aḥad', id: 'serta tidak ada sesuatu pun yang setara dengan-Nya."', words: ['وَلَمْ', 'يَكُنْ', 'لَّهٗ', 'كُفُوًا', 'اَحَدٌ'] }
+    ]
+  },
+  {
+    id: 'al-falaq', surahNo: 113, name: 'Al-Falaq', juz: 30, meaning: 'Waktu Subuh',
+    ayat: [
+      { no: 1, arab: 'قُلْ اَعُوْذُ بِرَبِّ الْفَلَقِ', latin: 'Qul a‘ūżu birabbil-falaq', id: 'Katakanlah, "Aku berlindung kepada Tuhan yang menguasai waktu subuh,', words: ['قُلْ', 'اَعُوْذُ', 'بِرَبِّ', 'الْفَلَقِ'] },
+      { no: 2, arab: 'مِنْ شَرِّ مَا خَلَقَ', latin: 'Min syarri mā khalaq', id: 'dari kejahatan (makhluk yang) Dia ciptakan,', words: ['مِنْ', 'شَرِّ', 'مَا', 'خَلَقَ'] },
+      { no: 3, arab: 'وَمِنْ شَرِّ غَاسِقٍ اِذَا وَقَبَ', latin: 'Wa min syarri gāsiqin iżā waqab', id: 'dari kejahatan malam apabila telah gelap gulita,', words: ['وَمِنْ', 'شَرِّ', 'غَاسِقٍ', 'اِذَا', 'وَقَبَ'] },
+      { no: 4, arab: 'وَمِنْ شَرِّ النَّفّٰثٰتِ فِي الْعُقَدِ', latin: 'Wa min syarrin-naffāṡāti fil-‘uqad', id: 'dari kejahatan perempuan-perempuan penyihir yang meniup pada buhul-buhul,', words: ['وَمِنْ', 'شَرِّ', 'النَّفّٰثٰتِ', 'فِي', 'الْعُقَدِ'] },
+      { no: 5, arab: 'وَمِنْ شَرِّ حَاسِدٍ اِذَا حَسَدَ', latin: 'Wa min syarri ḥāsidin iżā ḥasad', id: 'dan dari kejahatan orang yang dengki apabila dia dengki."', words: ['وَمِنْ', 'شَرِّ', 'حَاسِدٍ', 'اِذَا', 'حَسَدَ'] }
+    ]
+  },
+  {
+    id: 'an-nas', surahNo: 114, name: 'An-Nas', juz: 30, meaning: 'Manusia',
+    ayat: [
+      { no: 1, arab: 'قُلْ اَعُوْذُ بِرَبِّ النَّاسِ', latin: 'Qul a‘ūżu birabbin-nās', id: 'Katakanlah, "Aku berlindung kepada Tuhan manusia,', words: ['قُلْ', 'اَعُوْذُ', 'بِرَبِّ', 'النَّاسِ'] },
+      { no: 2, arab: 'مَلِكِ النَّاسِ', latin: 'Malikin-nās', id: 'Raja manusia,', words: ['مَلِكِ', 'النَّاسِ'] },
+      { no: 3, arab: 'اِلٰهِ النَّاسِ', latin: 'Ilāhin-nās', id: 'sembahan manusia,', words: ['اِلٰهِ', 'النَّاسِ'] },
+      { no: 4, arab: 'مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ', latin: 'Min syarril-waswāsil-khannās', id: 'dari kejahatan (bisikan) setan yang bersembunyi,', words: ['مِنْ', 'شَرِّ', 'الْوَسْوَاسِ', 'الْخَنَّاسِ'] },
+      { no: 5, arab: 'الَّذِيْ يُوَسْوِسُ فِيْ صُدُوْرِ النَّاسِ', latin: 'Allażī yuwaswisu fī ṣudūrin-nās', id: 'yang membisikkan (kejahatan) ke dalam dada manusia,', words: ['الَّذِيْ', 'يُوَسْوِسُ', 'فِيْ', 'صُدُوْرِ', 'النَّاسِ'] },
+      { no: 6, arab: 'مِنَ الْجِنَّةِ وَالنَّاسِ', latin: 'Minal-jinnati wan-nās', id: 'dari (golongan) jin dan manusia."', words: ['مِنَ', 'الْجِنَّةِ', 'وَالنَّاسِ'] }
+    ]
+  },
+  {
+    id: 'al-asr', surahNo: 103, name: "Al-'Asr", juz: 30, meaning: 'Masa',
+    ayat: [
+      { no: 1, arab: 'وَالْعَصْرِ', latin: 'Wal-‘aṣr', id: 'Demi masa,', words: ['وَالْعَصْرِ'] },
+      { no: 2, arab: 'اِنَّ الْاِنْسَانَ لَفِيْ خُسْرٍ', latin: 'Innal-insāna lafī khusr', id: 'sesungguhnya manusia benar-benar berada dalam kerugian,', words: ['اِنَّ', 'الْاِنْسَانَ', 'لَفِيْ', 'خُسْرٍ'] },
+      { no: 3, arab: 'اِلَّا الَّذِيْنَ اٰمَنُوْا وَعَمِلُوا الصّٰلِحٰتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ', latin: 'Illallażīna āmanū wa ‘amiluṣ-ṣāliḥāti wa tawāṣau bil-ḥaqqi wa tawāṣau biṣ-ṣabr', id: 'kecuali orang-orang yang beriman dan beramal saleh serta saling menasihati untuk kebenaran dan kesabaran.', words: ['اِلَّا', 'الَّذِيْنَ', 'اٰمَنُوْا', 'وَعَمِلُوا', 'الصّٰلِحٰتِ', 'وَتَوَاصَوْا', 'بِالْحَقِّ', 'وَتَوَاصَوْا', 'بِالصَّبْرِ'] }
+    ]
+  },
+  {
+    id: 'al-kautsar', surahNo: 108, name: 'Al-Kautsar', juz: 30, meaning: 'Nikmat yang Banyak',
+    ayat: [
+      { no: 1, arab: 'اِنَّآ اَعْطَيْنٰكَ الْكَوْثَرَ', latin: 'Innā a‘ṭainākal-kauṡar', id: 'Sesungguhnya Kami telah memberimu (Nabi Muhammad) nikmat yang banyak.', words: ['اِنَّآ', 'اَعْطَيْنٰكَ', 'الْكَوْثَرَ'] },
+      { no: 2, arab: 'فَصَلِّ لِرَبِّكَ وَانْحَرْ', latin: 'Fa ṣalli lirabbika wanḥar', id: 'Maka, laksanakanlah salat karena Tuhanmu dan berkurbanlah!', words: ['فَصَلِّ', 'لِرَبِّكَ', 'وَانْحَرْ'] },
+      { no: 3, arab: 'اِنَّ شَانِئَكَ هُوَ الْاَبْتَرُ', latin: 'Inna syāni’aka huwal-abtar', id: 'Sesungguhnya orang yang membencimu, dialah yang terputus (dari rahmat Allah).', words: ['اِنَّ', 'شَانِئَكَ', 'هُوَ', 'الْاَبْتَرُ'] }
+    ]
+  },
+  {
+    id: 'al-fiil', surahNo: 105, name: 'Al-Fiil', juz: 30, meaning: 'Gajah',
+    ayat: [
+      { no: 1, arab: 'اَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِاَصْحٰبِ الْفِيْلِ', latin: 'Alam tara kaifa fa‘ala rabbuka bi’aṣḥābil-fīl', id: 'Tidakkah engkau (Nabi Muhammad) memperhatikan bagaimana Tuhanmu telah bertindak terhadap pasukan bergajah?', words: ['اَلَمْ', 'تَرَ', 'كَيْفَ', 'فَعَلَ', 'رَبُّكَ', 'بِاَصْحٰبِ', 'الْفِيْلِ'] },
+      { no: 2, arab: 'اَلَمْ يَجْعَلْ كَيْدَهُمْ فِيْ تَضْلِيْلٍ', latin: 'Alam yaj‘al kaidahum fī taḍlīl', id: 'Bukankah Dia telah menjadikan tipu daya mereka itu sia-sia?', words: ['اَلَمْ', 'يَجْعَلْ', 'كَيْدَهُمْ', 'فِيْ', 'تَضْلِيْلٍ'] },
+      { no: 3, arab: 'وَّاَرْسَلَ عَلَيْهِمْ طَيْرًا اَبَابِيْلَ', latin: 'Wa arsala ‘alaihim ṭairan abābīl', id: 'Dia mengirimkan kepada mereka burung yang berbondong-bondong,', words: ['وَّاَرْسَلَ', 'عَلَيْهِمْ', 'طَيْرًا', 'اَبَابِيْلَ'] },
+      { no: 4, arab: 'تَرْمِيْهِمْ بِحِجَارَةٍ مِّنْ سِجِّيْلٍ', latin: 'Tarmīhim biḥijāratim min sijjīl', id: 'yang melempari mereka dengan batu dari tanah liat yang dibakar,', words: ['تَرْمِيْهِمْ', 'بِحِجَارَةٍ', 'مِّنْ', 'سِجِّيْلٍ'] },
+      { no: 5, arab: 'فَجَعَلَهُمْ كَعَصْفٍ مَّأْكُوْلٍ', latin: 'Fa ja‘alahum ka‘aṣfim ma’kūl', id: 'sehingga Dia menjadikan mereka seperti daun-daun yang dimakan (ulat).', words: ['فَجَعَلَهُمْ', 'كَعَصْفٍ', 'مَّأْكُوْلٍ'] }
+    ]
+  }
+];
+
+const MAKHRAJ_DATA = [
+  { name: '1. Al-Jauf (Rongga Mulut & Tenggorokan)', letters: 'ا – و – ي (Huruf Mad)', desc: 'Tempat keluarnya bunyi panjang (mad) yang mengalir bebas melalui rongga mulut dan tenggorokan.', sample: 'نُوْحِيْهَا' },
+  { name: '2. Al-Halq (Tenggorokan)', letters: 'ء ه – ع ح – غ خ', desc: 'Terbagi 3 bagian: pangkal tenggorokan (ء ه), tengah tenggorokan (ع ح), dan ujung tenggorokan atas (غ خ).', sample: 'اِهْدِنَا – اَلْحَمْدُ – غَيْرِ' },
+  { name: '3. Al-Lisan (Lidah)', letters: 'ق ك ج ش ي ض ل ن ر ط د ت ص ز س ظ ذ ث', desc: 'Tempat keluar huruf terbanyak, meliputi pangkal lidah, tengah lidah, tepi lidah, dan ujung lidah.', sample: 'قُلْ – الصِّرَاطَ – الضَّالِّيْنَ' },
+  { name: '4. Asy-Syafatain (Dua Bibir)', letters: 'ف – ب – م – و', desc: 'Huruf Fa dari bibir bawah dan gigi seri atas; Ba, Mim, dan Waw dari pertemuan dua bibir.', sample: 'بِسْمِ – فَلَقِ – وَقَبَ' },
+  { name: '5. Al-Khaisyum (Rongga Hidung)', letters: 'نّ – مّ (Ghunnah / Dengung)', desc: 'Tempat keluarnya suara dengung (ghunnah) pada Nun dan Mim bertasydid, Idgham Bighunnah, dan Ikhfa.', sample: 'اِنَّ – عَمَّ – مِنْ شَرِّ' }
+];
+
+const SIMILAR_LETTERS = [
+  { group: 'ث – س – ص', tip: 'ث ujung lidah keluar lembut; س desis tipis; ص desis tebal dengan pangkal lidah terangkat.', sample: 'ثَ – سَ – صَ' },
+  { group: 'ذ – ز – ظ', tip: 'ذ ujung lidah keluar tipis; ز berdesis kuat; ظ ujung lidah keluar tapi suara tebal.', sample: 'ذَ – زَ – ظَ' },
+  { group: 'ح – ه', tip: 'ح keluar dari tengah tenggorokan (bersih/pedas ringan); ه dari pangkal tenggorokan paling bawah.', sample: 'حَ – هَ' },
+  { group: 'ع – ء', tip: 'ع mengalir lembut di tengah tenggorokan; ء berhenti tegas di pangkal tenggorokan.', sample: 'عَ – أَ' },
+  { group: 'ق – ك', tip: 'ق dari pangkal lidah paling belakang (tebal); ك sedikit lebih maju (tipis).', sample: 'قَ – كَ' },
+  { group: 'ض – ظ', tip: 'ض dari tepi lidah menekan geraham atas; ظ ujung lidah bertemu ujung gigi seri atas.', sample: 'ضَ – ظَ' },
+  { group: 'ت – ط', tip: 'ت tipis (tarqiq) dengan sedikit hembusan; ط tebal (tafkhim) tanpa hembusan kuat.', sample: 'تَ – طَ' }
+];
+
+const TAHSIN_MODULES = [
+  { id: 'makhraj', title: 'Ketepatan Makhraj', materi: 'Setiap huruf harus keluar tepat dari tempatnya agar tidak mengubah makna ayat.', contoh: 'اَلْحَمْدُ (Ha bersih, bukan Ha dada)', arab: 'اَلْحَمْدُ لِلّٰهِ' },
+  { id: 'sifat', title: 'Sifat Huruf (Hams & Jahr)', materi: 'Huruf Hams (ف ح ث ه ش خ ص س ك ت) mengalirkan nafas ringan, sedangkan huruf Jahr menahan nafas.', contoh: 'نَسْتَعِيْنُ (Sin berdesis, Ta berhembus ringan)', arab: 'وَاِيَّاكَ نَسْتَعِيْنُ' },
+  { id: 'tafkhim', title: 'Tafkhim (Tebal) & Tarqiq (Tipis)', materi: 'Huruf Isti\'la (خ ص ض غ ط ق ظ) selalu dibaca tebal. Huruf lainnya tipis, kecuali Ra dan Lam Jalalah sesuai syaratnya.', contoh: 'الصِّرَاطَ (Shad dan Tha tebal)', arab: 'اِهْدِنَا الصِّرَاطَ' },
+  { id: 'mad', title: 'Konsistensi Panjang Pendek (Mad)', materi: 'Bedakan bacaan 1 harakat (pendek) dan 2 harakat (mad thabi\'i) secara konsisten.', contoh: 'مٰلِكِ (Ma dibaca 2 harakat, Li-Ki pendek)', arab: 'مٰلِكِ يَوْمِ الدِّيْنِ' },
+  { id: 'ghunnah', title: 'Ghunnah (Dengung Sempurna)', materi: 'Tahan suara dengung di pangkal hidung sekitar 2 harakat pada Nun dan Mim bertasydid.', contoh: 'اِنَّ (Tahan dengung pada Nun bertasydid)', arab: 'اِنَّ الْاِنْسَانَ' },
+  { id: 'waqaf', title: 'Waqaf & Ibtida (Berhenti & Memulai)', materi: 'Berhenti pada akhir ayat atau tanda waqaf dengan menyukunkan huruf terakhir, lalu lanjutkan dengan nafas baru.', contoh: 'قُلْ هُوَ اللّٰهُ اَحَدٌ (Dal disukunkan & dipantulkan)', arab: 'قُلْ هُوَ اللّٰهُ اَحَدٌ' }
+];
+
+const TAJWID_DATA = [
+  {
+    cat: '1. Nun Sukun & Tanwin',
+    rules: [
+      { name: 'Izhar Halqi', def: 'Membaca Nun sukun atau tanwin dengan jelas tanpa dengung.', how: 'Bunyi "n" terdengar tegas dan jelas.', letters: 'ء ه ع ح غ خ', example: 'مِنْ خَوْفٍ / كُفُوًا اَحَدٌ', quizQ: 'Huruf mana yang termasuk hukum Izhar Halqi?', opts: ['ب', 'ح', 'م', 'ش'], ans: 1 },
+      { name: 'Idgham Bighunnah', def: 'Meleburkan Nun sukun/tanwin ke huruf berikutnya disertai dengung 2 harakat.', how: 'Suara masuk ke huruf berikutnya dan ditahan berdengung.', letters: 'ي ن م و', example: 'مَنْ يَّقُوْلُ / لَهَبٍ وَّتَبَّ', quizQ: 'Hukum bacaan pada lafaz مَنْ يَّقُوْلُ adalah...', opts: ['Izhar', 'Idgham Bighunnah', 'Iqlab', 'Qalqalah'], ans: 1 },
+      { name: 'Idgham Bilaghunnah', def: 'Meleburkan Nun sukun/tanwin ke huruf Lam atau Ra tanpa dengung.', how: 'Langsung masuk ke huruf ل atau ر secara jelas.', letters: 'ل ر', example: 'مِنْ رَّبِّهِمْ / لَمْ يَكُنْ لَّهٗ', quizQ: 'Huruf Idgham Bilaghunnah hanya ada dua, yaitu...', opts: ['ل dan ر', 'م dan ن', 'ب dan ت', 'ع dan غ'], ans: 0 },
+      { name: 'Iqlab', def: 'Mengubah bunyi Nun sukun/tanwin menjadi bunyi Mim disertai dengung.', how: 'Bibir merapat ringan seperti mengucap "m" sebelum huruf Ba.', letters: 'ب', example: 'مِنْ بَعْدِ / سَمِيْعٌ بَصِيْرٌ', quizQ: 'Iqlab terjadi apabila Nun sukun bertemu huruf...', opts: ['م', 'ن', 'ب', 'ف'], ans: 2 },
+      { name: 'Ikhfa Haqiqi', def: 'Membaca Nun sukun/tanwin secara samar antara jelas dan lebur disertai dengung.', how: 'Lidah bersiap menuju makhraj huruf berikutnya sambil berdengung.', letters: 'ت ث ج د ذ ز س ش ص ض ط ظ ف ق ك', example: 'مِنْ شَرِّ / اَلْاِنْسَانَ', quizQ: 'Lafaz مِنْ شَرِّ pada Surah Al-Falaq mengandung hukum...', opts: ['Izhar', 'Iqlab', 'Ikhfa Haqiqi', 'Idgham Mimi'], ans: 2 }
+    ]
+  },
+  {
+    cat: '2. Mim Sukun',
+    rules: [
+      { name: 'Izhar Syafawi', def: 'Membaca Mim sukun dengan jelas di bibir tanpa dengung.', how: 'Bibir dirapatkan singkat lalu lanjut ke huruf berikutnya.', letters: 'Semua huruf hijaiyah selain م dan ب', example: 'لَمْ يَلِدْ / عَلَيْهِمْ غَيْرِ', quizQ: 'Hukum Mim sukun bertemu huruf Ya pada لَمْ يَلِدْ adalah...', opts: ['Izhar Syafawi', 'Ikhfa Syafawi', 'Idgham Mimi', 'Iqlab'], ans: 0 },
+      { name: 'Ikhfa Syafawi', def: 'Menyamarkan Mim sukun saat bertemu huruf Ba disertai dengung.', how: 'Bibir menutup lembut disertai dengung 2 harakat.', letters: 'ب', example: 'تَرْمِيْهِمْ بِحِجَارَةٍ', quizQ: 'Ikhfa Syafawi terjadi ketika Mim sukun bertemu huruf...', opts: ['م', 'ب', 'ف', 'و'], ans: 1 },
+      { name: 'Idgham Mimi', def: 'Meleburkan Mim sukun ke huruf Mim berharakat disertai dengung.', how: 'Dibaca seperti satu Mim bertasydid dengan dengung.', letters: 'م', example: 'لَهُمْ مَّغْفِرَةٌ', quizQ: 'Mim sukun bertemu Mim disebut...', opts: ['Idgham Mimi', 'Izhar Halqi', 'Iqlab', 'Qalqalah'], ans: 0 }
+    ]
+  },
+  {
+    cat: '3. Ghunnah & Qalqalah',
+    rules: [
+      { name: 'Ghunnah', def: 'Suara dengung yang keluar dari pangkal hidung pada Nun atau Mim bertasydid.', how: 'Ditahan dengungnya selama 2 harakat.', letters: 'نّ – مّ', example: 'اِنَّ – النَّاسِ – عَمَّ', quizQ: 'Berapa panjang dengung Ghunnah pada النَّاسِ?', opts: ['1 harakat', '2 harakat', '6 harakat', 'Tidak dengung'], ans: 1 },
+      { name: 'Qalqalah (Sughra & Kubra)', def: 'Pantulan suara pada 5 huruf Qalqalah ketika berharakat sukun atau diwaqafkan.', how: 'Dipantulkan ringan di tengah kata (Sughra) atau mantap di akhir ayat (Kubra).', letters: 'ق ط ب ج د (Baju Di Thoqo)', example: 'لَمْ يَلِدْ / اَلْفَلَقِ / اَحَدٌ', quizQ: 'Huruf yang bukan termasuk huruf Qalqalah adalah...', opts: ['ق', 'د', 'ب', 'س'], ans: 3 }
+    ]
+  },
+  {
+    cat: '4. Mad (Bacaan Panjang)',
+    rules: [
+      { name: "Mad Thabi'i", def: 'Bacaan panjang dasar 2 harakat.', how: 'Fathah bertemu Alif, Kasrah bertemu Ya sukun, Dhammah bertemu Waw sukun.', letters: 'ا – و – ي', example: 'مَا خَلَقَ / فِيْ صُدُوْرِ', quizQ: 'Panjang bacaan Mad Thabi\'i adalah...', opts: ['1 harakat', '2 harakat', '4 harakat', '6 harakat'], ans: 1 },
+      { name: 'Mad Wajib Muttashil', def: 'Mad Thabi\'i bertemu Hamzah dalam satu kata.', how: 'Dibaca panjang 4 sampai 5 harakat.', letters: 'Mad + ء (1 kata)', example: 'اِذَا جَآءَ نَصْرُ اللّٰهِ', quizQ: 'Mad Thabi\'i bertemu Hamzah dalam satu kata disebut...', opts: ['Mad Wajib Muttashil', 'Mad Jaiz Munfashil', 'Mad Thabi\'i', 'Mad Lazim'], ans: 0 },
+      { name: 'Mad Jaiz Munfashil', def: 'Mad Thabi\'i bertemu Hamzah di kata yang terpisah.', how: 'Dibaca panjang 4 atau 5 harakat (boleh 2 harakat pada riwayat tertentu).', letters: 'Mad + ء (beda kata)', example: 'اِنَّآ اَعْطَيْنٰكَ', quizQ: 'Contoh اِنَّآ اَعْطَيْنٰكَ pada Surah Al-Kautsar adalah...', opts: ['Mad Jaiz Munfashil', 'Mad Lazim', 'Izhar', 'Qalqalah'], ans: 0 },
+      { name: "Mad 'Aridh Lissukun", def: 'Mad Thabi\'i bertemu huruf hidup yang disukunkan karena berhenti (waqaf).', how: 'Boleh dibaca 2, 4, atau 6 harakat secara konsisten.', letters: 'Mad + huruf waqaf', example: 'الْعٰلَمِيْنَ / الرَّحِيْمِ', quizQ: 'Akhir ayat الرَّحِيْمِ ketika berhenti dibaca dengan hukum...', opts: ['Mad \'Aridh Lissukun', 'Iqlab', 'Idgham', 'Ikhfa'], ans: 0 },
+      { name: 'Mad Lazim', def: 'Mad Thabi\'i bertemu tanda tasydid atau sukun asli.', how: 'Wajib dibaca panjang 6 harakat.', letters: 'Mad + Tasydid/Sukun asli', example: 'وَلَا الضَّۤالِّيْنَ', quizQ: 'Panjang bacaan pada الضَّۤالِّيْنَ (Mad Lazim) adalah...', opts: ['2 harakat', '3 harakat', '6 harakat', '1 harakat'], ans: 2 }
+    ]
+  },
+  {
+    cat: '5. Alif Lam, Tafkhim/Tarqiq & Waqaf',
+    rules: [
+      { name: 'Alif Lam Qamariyah', def: 'Lam sukun pada Alif Lam dibaca jelas.', how: 'Bunyi "al-" terdengar terang dan jelas.', letters: 'ا ب غ ح ج ك و خ ف ع ق ي م ه', example: 'الْحَمْدُ / الْفَلَقِ / الْعَصْرِ', quizQ: 'Lafaz الْفَلَقِ mengandung hukum...', opts: ['Alif Lam Qamariyah', 'Alif Lam Syamsiyah', 'Iqlab', 'Ghunnah'], ans: 0 },
+      { name: 'Alif Lam Syamsiyah', def: 'Lam tidak dibaca, langsung melebur ke huruf bertasydid setelahnya.', how: 'Bunyi "l" lebur, misal "ar-rahman" bukan "al-rahman".', letters: 'ت ث د ذ ر ز س ش ص ض ط ظ ل ن', example: 'الرَّحْمٰنِ / النَّاسِ / الصَّمَدُ', quizQ: 'Pada lafaz النَّاسِ, Alif Lam dibaca...', opts: ['Jelas (Qamariyah)', 'Melebur (Syamsiyah)', 'Dengung saja', 'Dipantulkan'], ans: 1 },
+      { name: 'Tafkhim & Tarqiq', def: 'Menebalkan (Tafkhim) atau menipiskan (Tarqiq) bunyi huruf, khususnya Ra dan Lam Allah.', how: 'Lafaz اللّٰه dibaca tebal jika didahului fathah/dhammah, tipis jika didahului kasrah (بِسْمِ اللّٰهِ).', letters: 'ر dan ل pada اللّٰه', example: 'قُلْ هُوَ اللّٰهُ (Tebal) / بِسْمِ اللّٰهِ (Tipis)', quizQ: 'Lafaz اللّٰهِ pada بِسْمِ اللّٰهِ dibaca...', opts: ['Tafkhim (Tebal)', 'Tarqiq (Tipis)', 'Qalqalah', 'Ikhfa'], ans: 1 },
+      { name: 'Waqaf & Ibtida', def: 'Aturan berhenti (Waqaf) dan memulai kembali bacaan (Ibtida).', how: 'م (Wajib berhenti), لا (Jangan berhenti), ج (Boleh berhenti/lanjut), صلى (Utama lanjut), قلى (Utama berhenti).', letters: 'م – لا – ج – صلى – قلى', example: 'Berhenti di setiap akhir ayat adalah sunnah', quizQ: 'Tanda waqaf لا (Lam Alif) di tengah ayat berarti...', opts: ['Wajib berhenti', 'Sebaiknya tidak berhenti', 'Harus diulang', 'Baca panjang'], ans: 1 }
+    ]
+  }
+];
+
+const BADGES_CONFIG = [
+  { id: 'pemula', title: "Pemula Al-Qur'an", desc: "Memulai perjalanan belajar membaca Al-Qur'an", icon: '🌱', check: (u) => true },
+  { id: 'hijaiyah', title: 'Hafal Huruf Hijaiyah', desc: 'Skor Pengenalan Huruf mencapai 80%+', icon: '🔤', check: (u) => u.SkorHuruf >= 80 },
+  { id: 'harakat', title: 'Lancar Harakat', desc: 'Skor Harakat mencapai 80%+', icon: '✨', check: (u) => u.SkorHarakat >= 80 },
+  { id: 'lancar', title: 'Lancar Membaca', desc: 'Skor Kelancaran mencapai 75%+', icon: '📖', check: (u) => u.SkorKelancaran >= 75 },
+  { id: 'tahsin', title: 'Pejuang Tahsin', desc: 'Skor Tahsin & Makhraj mencapai 75%+', icon: '🎙️', check: (u) => u.SkorTahsin >= 75 && u.SkorMakhraj >= 75 },
+  { id: 'tajwid', title: 'Ahli Tajwid Dasar', desc: 'Skor Tajwid mencapai 80%+', icon: '📚', check: (u) => u.SkorTajwid >= 80 },
+  { id: 'streak7', title: '7 Hari Istiqamah', desc: 'Belajar mengaji 7 hari berturut-turut', icon: '🔥', check: (u) => u.StreakHari >= 7 },
+  { id: 'streak30', title: '30 Hari Istiqamah', desc: 'Belajar mengaji 30 hari berturut-turut', icon: '👑', check: (u) => u.StreakHari >= 30 }
+];
+
+/* ============================================================================
+ * 2. DATABASE LOKAL HTML5 (LOCALSTORAGE) & STATE APLIKASI
+ * ============================================================================ */
+
+function getTodayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function getDefaultState() {
+  return {
+    currentPage: 'beranda',
+    currentLevelView: 1,
+    selectedHijaiyahIdx: 0,
+    selectedSurahId: 'al-fatihah',
+    selectedMushafSurahId: 'al-fatihah',
+    lancarStage: 0,
+    lancarMode: 'Ikuti Guru',
+    audioRate: 1.0,
+    arabScale: 1.0,
+    dailyTimerInterval: null,
+    dailySecondsLeft: 0,
+    dailyStep: 0,
+    mediaRecorder: null,
+    audioChunks: [],
+    lastRecordedBase64: '',
+    lastSpeechFeedback: '',
+    confirmResetStep: false,
+    user: {
+      UserID: 'USR-' + Date.now(),
+      Nama: "Sahabat Qur'an",
+      Role: 'Siswa',
+      LevelAwal: 1,
+      SkorHuruf: 65,
+      SkorHarakat: 50,
+      SkorKelancaran: 40,
+      SkorMakhraj: 35,
+      SkorTajwid: 30,
+      SkorTahsin: 30,
+      StreakHari: 1,
+      TargetMenit: 10,
+      ProgressHarian: 35,
+      TanggalTerakhirBelajar: getTodayStr(),
+      hasDonePlacement: false,
+      AyatStatus: {}
+    },
+    guruData: {
+      students: [
+        { UserID: 'USR-001', Nama: 'Ahmad Fauzi', LevelAwal: 1, SkorHuruf: 85, SkorHarakat: 78, SkorKelancaran: 70, SkorMakhraj: 65, SkorTajwid: 60, SkorTahsin: 55, ProgressHarian: 60 },
+        { UserID: 'USR-002', Nama: 'Siti Rahmah', LevelAwal: 5, SkorHuruf: 100, SkorHarakat: 95, SkorKelancaran: 82, SkorMakhraj: 76, SkorTajwid: 72, SkorTahsin: 68, ProgressHarian: 85 }
+      ],
+      classes: [
+        { KodeKelas: 'KLS-101', NamaKelas: 'Tahsin Pemula A', NamaGuru: 'Ustadz Abdullah', TanggalDibuat: getTodayStr() }
+      ],
+      tasks: [
+        { IDTugas: 'TGS-1', KodeKelas: 'KLS-101', JudulTugas: 'Setoran Al-Fatihah', Materi: 'Surah Al-Fatihah ayat 1-7', Tenggat: 'Jumat' }
+      ],
+      submissions: []
+    }
+  };
+}
+
+let appState = getDefaultState();
+
+function loadLocalState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.user) appState.user = Object.assign(appState.user, parsed.user);
+      if (parsed.audioRate) appState.audioRate = parsed.audioRate;
+      if (parsed.arabScale) appState.arabScale = parsed.arabScale;
+      if (parsed.guruData) appState.guruData = Object.assign(appState.guruData, parsed.guruData);
+
+      // Update streak otomatis jika berganti hari
+      const today = getTodayStr();
+      if (appState.user.TanggalTerakhirBelajar && appState.user.TanggalTerakhirBelajar !== today) {
+        appState.user.StreakHari = (Number(appState.user.StreakHari) || 1) + 1;
+        appState.user.TanggalTerakhirBelajar = today;
+        appState.user.ProgressHarian = 0;
+        persistState();
+      }
+
+      document.documentElement.style.setProperty('--arab-scale', appState.arabScale);
+    }
+  } catch (e) {
+    console.warn('Gagal memuat data lokal:', e);
+  }
+}
+
+function persistState() {
+  appState.user.TanggalTerakhirBelajar = getTodayStr();
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      user: appState.user,
+      audioRate: appState.audioRate,
+      arabScale: appState.arabScale,
+      guruData: appState.guruData
+    }));
+  } catch (e) {
+    // Jika quota penuh karena audio rekaman besar, simpan tanpa audio base64 lama
+    try {
+      const trimmedSubs = appState.guruData.submissions.map((s, idx) =>
+        idx < 3 ? s : Object.assign({}, s, { AudioBase64_atau_Link: '' })
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        user: appState.user,
+        audioRate: appState.audioRate,
+        arabScale: appState.arabScale,
+        guruData: Object.assign({}, appState.guruData, { submissions: trimmedSubs })
+      }));
+    } catch (e2) {}
+  }
+  updateSidebarInfo();
+}
+
+function showToast(msg) {
+  const box = document.getElementById('toast-box');
+  if (!box) return;
+  box.textContent = msg;
+  box.classList.remove('hidden');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => box.classList.add('hidden'), 3200);
+}
+
+/* ============================================================================
+ * 3. ENGINE AUDIO HTML5 (MUROTTAL MP3 + WEB SPEECH + WEB AUDIO) & MIKROFON
+ * ============================================================================ */
+
+const audioEngine = {
+  ctx: null,
+  voices: [],
+  loop: false,
+  mode: 'idle',
+  lastText: '',
+  lastRate: 1.0,
+  lastLabel: '',
+  micPermitted: false,
+  activeStream: null,
+  activeRecorder: null,
+  activeSpeechRec: null,
+  visualizerRaf: null,
+  recTimerInterval: null,
+  recSeconds: 0
+};
+
+function getQuranAudioEl() {
+  return document.getElementById('quran-audio-el');
+}
+
+function unlockAudioEngine() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx && !audioEngine.ctx) {
+      audioEngine.ctx = new AudioCtx();
+    }
+    if (audioEngine.ctx && audioEngine.ctx.state === 'suspended') {
+      audioEngine.ctx.resume();
+    }
+    if ('speechSynthesis' in window) {
+      audioEngine.voices = window.speechSynthesis.getVoices();
+    }
+  } catch (e) {}
+}
+
+function playUiTone(type = 'tap') {
+  try {
+    unlockAudioEngine();
+    if (!audioEngine.ctx) return;
+    const osc = audioEngine.ctx.createOscillator();
+    const gain = audioEngine.ctx.createGain();
+    osc.connect(gain);
+    gain.connect(audioEngine.ctx.destination);
+    const now = audioEngine.ctx.currentTime;
+
+    if (type === 'start') {
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.12);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } else if (type === 'stop') {
+      osc.frequency.setValueAtTime(587.33, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 0.12);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } else if (type === 'success') {
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.setValueAtTime(659.25, now + 0.09);
+      osc.frequency.setValueAtTime(783.99, now + 0.18);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+      osc.start(now);
+      osc.stop(now + 0.32);
+    } else {
+      osc.frequency.setValueAtTime(440, now);
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    }
+  } catch (e) {}
+}
+
+function getSupportedAudioMimeType() {
+  if (typeof MediaRecorder === 'undefined') return '';
+  const types = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/mp4;codecs=mp4a.40.2',
+    'audio/mp4',
+    'audio/ogg;codecs=opus',
+    'audio/aac'
+  ];
+  for (const t of types) {
+    if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) return t;
+  }
+  return '';
+}
+
+function updateMicStatusUI(status, message) {
+  const dot = document.getElementById('mic-status-dot');
+  const txt = document.getElementById('mic-status-text');
+  if (!dot || !txt) return;
+  dot.className = 'w-3 h-3 rounded-full inline-block shrink-0 ' + (
+    status === 'ok' ? 'bg-emerald-500' :
+    status === 'error' ? 'bg-rose-500' : 'bg-amber-400'
+  );
+  txt.textContent = message;
+}
+
+async function requestDevicePermissions() {
+  unlockAudioEngine();
+  playUiTone('tap');
+
+  if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    updateMicStatusUI('error', 'Buka melalui HTTPS atau localhost agar mikrofon diizinkan browser.');
+    showToast('Gunakan HTTPS atau localhost agar mikrofon dapat diakses.');
+    return false;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    updateMicStatusUI('error', 'Browser ini belum mendukung akses mikrofon. Gunakan Chrome atau Safari terbaru.');
+    showToast('Gunakan browser Chrome (Android/PC) atau Safari (iPhone/iPad).');
+    return false;
+  }
+
+  try {
+    updateMicStatusUI('wait', 'Meminta izin mikrofon dari perangkat Anda...');
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+    });
+    stream.getTracks().forEach(t => t.stop());
+    audioEngine.micPermitted = true;
+    playUiTone('success');
+    updateMicStatusUI('ok', 'Audio & Mikrofon AKTIF dan siap digunakan di perangkat ini.');
+    showToast('✓ Audio & Mikrofon berhasil diizinkan!');
+    return true;
+  } catch (err) {
+    let msg = 'Izin mikrofon ditolak. ';
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      msg = 'Izin mikrofon diblokir. Klik ikon gembok/pengaturan di bilah alamat browser → Izinkan Mikrofon.';
+    } else if (err.name === 'NotFoundError') {
+      msg = 'Perangkat mikrofon tidak terdeteksi pada HP/PC Anda.';
+    } else if (err.name === 'NotReadableError') {
+      msg = 'Mikrofon sedang digunakan oleh aplikasi lain. Tutup aplikasi lain lalu coba lagi.';
+    }
+    updateMicStatusUI('error', msg);
+    showToast('⚠ ' + msg);
+    return false;
+  }
+}
+
+function testAudioSpeaker() {
+  unlockAudioEngine();
+  playUiTone('success');
+  playQuranAyah(1, 1, 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ', 'Tes Audio: Bismillah (QS. Al-Fatihah : 1)');
+}
+
+function formatAudioTime(sec) {
+  if (!isFinite(sec) || sec < 0) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function showGlobalAudioBar(title, isPlaying) {
+  const bar = document.getElementById('global-audio-bar');
+  const titleEl = document.getElementById('gap-title');
+  const playBtn = document.getElementById('gap-play-btn');
+  const speedBtn = document.getElementById('gap-speed-btn');
+  const loopBtn = document.getElementById('gap-loop-btn');
+  if (!bar) return;
+
+  bar.classList.remove('hidden');
+  titleEl.textContent = title || 'Memutar Bacaan...';
+  playBtn.textContent = isPlaying ? '⏸' : '▶';
+  speedBtn.textContent = `${appState.audioRate}x`;
+  loopBtn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold border ' + (
+    audioEngine.loop
+      ? 'bg-amber-500 text-emerald-950 border-amber-400'
+      : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+  );
+}
+
+function playQuranAyah(surahNo, ayahNo, fallbackText, label, rateOverride) {
+  unlockAudioEngine();
+  stopAllAudio(false);
+
+  const audioEl = getQuranAudioEl();
+  const sPad = String(surahNo).padStart(3, '0');
+  const aPad = String(ayahNo).padStart(3, '0');
+  const mp3Url = `https://everyayah.com/data/Alafasy_128kbps/${sPad}${aPad}.mp3`;
+  const rate = rateOverride || appState.audioRate || 1.0;
+
+  audioEngine.mode = 'mp3';
+  audioEngine.lastText = fallbackText || '';
+  audioEngine.lastRate = rate;
+  audioEngine.lastLabel = label || `Surah ${surahNo} : Ayat ${ayahNo}`;
+
+  audioEl.src = mp3Url;
+  audioEl.loop = audioEngine.loop;
+  audioEl.playbackRate = rate;
+
+  showGlobalAudioBar(audioEngine.lastLabel, true);
+
+  audioEl.onerror = () => {
+    if (audioEngine.mode === 'mp3' && fallbackText) {
+      speakArabic(fallbackText, rate, audioEngine.lastLabel + ' (Mode Suara Perangkat)');
+    }
+  };
+
+  const playPromise = audioEl.play();
+  if (playPromise && typeof playPromise.catch === 'function') {
+    playPromise.catch(() => {
+      if (fallbackText) {
+        speakArabic(fallbackText, rate, audioEngine.lastLabel);
+      }
+    });
+  }
+}
+
+function speakArabic(text, rateOverride, label) {
+  unlockAudioEngine();
+  stopAllAudio(false);
+
+  if (!('speechSynthesis' in window)) {
+    playUiTone('tap');
+    showToast('Browser tidak mendukung TTS. Gunakan tombol audio Murottal pada ayat.');
+    return;
+  }
+
+  const rate = rateOverride || appState.audioRate || 1.0;
+  audioEngine.mode = 'tts';
+  audioEngine.lastText = text;
+  audioEngine.lastRate = rate;
+  audioEngine.lastLabel = label || `Bacaan: ${text.slice(0, 32)}`;
+
+  window.speechSynthesis.cancel();
+
+  const startSpeak = () => {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'ar-SA';
+    utter.rate = rate;
+    utter.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    const arVoice =
+      voices.find(v => v.lang && v.lang.toLowerCase() === 'ar-sa') ||
+      voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ar'));
+    if (arVoice) utter.voice = arVoice;
+
+    utter.onstart = () => {
+      showGlobalAudioBar(audioEngine.lastLabel, true);
+      const seek = document.getElementById('gap-seek');
+      if (seek) seek.value = 50;
+    };
+    utter.onend = () => {
+      if (audioEngine.loop && audioEngine.mode === 'tts') {
+        setTimeout(() => {
+          if (audioEngine.loop && audioEngine.mode === 'tts') {
+            speakArabic(audioEngine.lastText, audioEngine.lastRate, audioEngine.lastLabel);
+          }
+        }, 450);
+      } else {
+        showGlobalAudioBar(audioEngine.lastLabel, false);
+        const seek = document.getElementById('gap-seek');
+        if (seek) seek.value = 100;
+      }
+    };
+    utter.onerror = () => {
+      showGlobalAudioBar(audioEngine.lastLabel, false);
+    };
+
+    showGlobalAudioBar(audioEngine.lastLabel, true);
+    window.speechSynthesis.speak(utter);
+  };
+
+  setTimeout(startSpeak, 40);
+}
+
+function toggleGlobalAudio() {
+  const audioEl = getQuranAudioEl();
+  if (audioEngine.mode === 'mp3') {
+    if (audioEl.paused) {
+      audioEl.play();
+      showGlobalAudioBar(audioEngine.lastLabel, true);
+    } else {
+      audioEl.pause();
+      showGlobalAudioBar(audioEngine.lastLabel, false);
+    }
+  } else if (audioEngine.mode === 'tts') {
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      showGlobalAudioBar(audioEngine.lastLabel, false);
+    } else if (audioEngine.lastText) {
+      speakArabic(audioEngine.lastText, audioEngine.lastRate, audioEngine.lastLabel);
+    }
+  }
+}
+
+function toggleGlobalLoop() {
+  audioEngine.loop = !audioEngine.loop;
+  const audioEl = getQuranAudioEl();
+  if (audioEl) audioEl.loop = audioEngine.loop;
+  showGlobalAudioBar(audioEngine.lastLabel, audioEngine.mode === 'mp3' ? !audioEl.paused : window.speechSynthesis.speaking);
+  showToast(audioEngine.loop ? '🔁 Mode Ulangi Otomatis AKTIF' : 'Mode Ulangi Otomatis dimatikan');
+}
+
+function cycleGlobalSpeed() {
+  const speeds = [0.75, 1.0, 1.25];
+  const idx = speeds.indexOf(Number(appState.audioRate));
+  appState.audioRate = speeds[(idx + 1) % speeds.length];
+  const audioEl = getQuranAudioEl();
+  if (audioEl) audioEl.playbackRate = appState.audioRate;
+  const speedBtn = document.getElementById('gap-speed-btn');
+  if (speedBtn) speedBtn.textContent = `${appState.audioRate}x`;
+  persistState();
+  showToast(`Kecepatan bacaan: ${appState.audioRate}x`);
+}
+
+function seekGlobalAudio(val) {
+  const audioEl = getQuranAudioEl();
+  if (audioEngine.mode === 'mp3' && audioEl.duration) {
+    audioEl.currentTime = (Number(val) / 100) * audioEl.duration;
+  }
+}
+
+function stopAllAudio(hideBar = true) {
+  const audioEl = getQuranAudioEl();
+  if (audioEl) {
+    audioEl.onerror = null;
+    audioEl.pause();
+    audioEl.currentTime = 0;
+  }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+  audioEngine.mode = 'idle';
+  if (hideBar) {
+    const bar = document.getElementById('global-audio-bar');
+    if (bar) bar.classList.add('hidden');
+  }
+}
+
+function startMicVisualizer(stream, barElId) {
+  stopMicVisualizer();
+  try {
+    unlockAudioEngine();
+    if (!audioEngine.ctx) return;
+    const source = audioEngine.ctx.createMediaStreamSource(stream);
+    const analyser = audioEngine.ctx.createAnalyser();
+    analyser.fftSize = 128;
+    source.connect(analyser);
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    const tick = () => {
+      const barEl = document.getElementById(barElId);
+      if (!barEl) return;
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+      const avg = sum / dataArray.length;
+      const pct = Math.min(100, Math.max(8, Math.round((avg / 90) * 100)));
+      barEl.style.width = pct + '%';
+      audioEngine.visualizerRaf = requestAnimationFrame(tick);
+    };
+    tick();
+  } catch (e) {}
+}
+
+function stopMicVisualizer() {
+  if (audioEngine.visualizerRaf) {
+    cancelAnimationFrame(audioEngine.visualizerRaf);
+    audioEngine.visualizerRaf = null;
+  }
+}
+
+function stopActiveMicCapture() {
+  stopMicVisualizer();
+  clearInterval(audioEngine.recTimerInterval);
+  if (audioEngine.activeSpeechRec) {
+    try { audioEngine.activeSpeechRec.stop(); } catch (e) {}
+    audioEngine.activeSpeechRec = null;
+  }
+  if (audioEngine.activeRecorder && audioEngine.activeRecorder.state !== 'inactive') {
+    try { audioEngine.activeRecorder.stop(); } catch (e) {}
+  }
+  if (audioEngine.activeStream) {
+    audioEngine.activeStream.getTracks().forEach(t => t.stop());
+    audioEngine.activeStream = null;
+  }
+}
+
+async function tryPronounceCheck(expectedText, feedbackElementId) {
+  unlockAudioEngine();
+  stopAllAudio(false);
+  stopActiveMicCapture();
+
+  const el = document.getElementById(feedbackElementId);
+  if (!el) return;
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    el.innerHTML = `<div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm font-medium">🎙️ Browser Anda belum mendukung akses mikrofon. Gunakan Chrome (Android/PC) atau Safari (iPhone/iPad).</div>`;
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+    });
+    audioEngine.micPermitted = true;
+    audioEngine.activeStream = stream;
+    updateMicStatusUI('ok', 'Audio & Mikrofon AKTIF dan siap digunakan di perangkat ini.');
+    playUiTone('start');
+
+    const mimeType = getSupportedAudioMimeType();
+    const chunks = [];
+    const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    audioEngine.activeRecorder = recorder;
+    audioEngine.recSeconds = 0;
+
+    let recognizedTranscript = '';
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRec) {
+      try {
+        const rec = new SpeechRec();
+        rec.lang = 'ar-SA';
+        rec.interimResults = true;
+        rec.maxAlternatives = 1;
+        rec.onresult = (ev) => {
+          let combined = '';
+          for (let i = 0; i < ev.results.length; i++) {
+            combined += ev.results[i][0].transcript + ' ';
+          }
+          recognizedTranscript = combined.trim();
+        };
+        rec.onerror = () => {};
+        rec.start();
+        audioEngine.activeSpeechRec = rec;
+      } catch (e) {}
+    }
+
+    el.innerHTML = `
+      <div class="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-400 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div class="font-bold text-emerald-950 text-sm flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-rose-600 animate-ping inline-block"></span>
+            Merekam suara Anda... (<span id="prac-timer-${feedbackElementId}">0:00</span>)
+          </div>
+          <button onclick="stopActiveMicCapture()" class="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs">
+            ⏹ Selesai & Periksa
+          </button>
+        </div>
+        <div class="w-full bg-emerald-200/70 rounded-full h-3 overflow-hidden">
+          <div id="prac-meter-${feedbackElementId}" class="bg-emerald-600 h-3 rounded-full transition-all duration-75" style="width: 12%"></div>
+        </div>
+        <div class="text-xs text-emerald-800">Ucapkan bacaan dengan jelas, lalu tekan <b>Selesai & Periksa</b>.</div>
+      </div>
+    `;
+
+    startMicVisualizer(stream, `prac-meter-${feedbackElementId}`);
+
+    audioEngine.recTimerInterval = setInterval(() => {
+      audioEngine.recSeconds++;
+      const tEl = document.getElementById(`prac-timer-${feedbackElementId}`);
+      if (tEl) tEl.textContent = formatAudioTime(audioEngine.recSeconds);
+      if (audioEngine.recSeconds >= 25) stopActiveMicCapture();
+    }, 1000);
+
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) chunks.push(e.data);
+    };
+
+    recorder.onstop = () => {
+      stopMicVisualizer();
+      clearInterval(audioEngine.recTimerInterval);
+      if (audioEngine.activeStream) {
+        audioEngine.activeStream.getTracks().forEach(t => t.stop());
+        audioEngine.activeStream = null;
+      }
+      playUiTone('stop');
+
+      const blob = new Blob(chunks, { type: mimeType || 'audio/mp4' });
+      const playbackUrl = URL.createObjectURL(blob);
+
+      let evalBox = '';
+      const cleanExp = expectedText.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\s]/g, '');
+      const cleanGot = recognizedTranscript.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\s]/g, '');
+
+      if (cleanGot.length > 0) {
+        const isMatch = cleanExp.includes(cleanGot) || cleanGot.includes(cleanExp.slice(0, Math.min(3, cleanExp.length)));
+        if (isMatch) {
+          playUiTone('success');
+          evalBox = `
+            <div class="text-emerald-900 font-bold text-sm">✓ Bacaan sudah cukup tepat. MasyaAllah!</div>
+            <div class="text-xs text-emerald-800">✓ Kelancaran membaca semakin baik. Terdeteksi: <span class="arabic-md">${escHtml(recognizedTranscript)}</span></div>
+          `;
+          addScore('SkorKelancaran', 3);
+        } else {
+          evalBox = `
+            <div class="text-amber-900 font-bold text-sm">⚠ Mari periksa kembali bersama.</div>
+            <div class="text-xs text-amber-800">Perhatikan makhraj huruf dan panjang pendeknya. Terdeteksi: <span class="arabic-md">${escHtml(recognizedTranscript)}</span></div>
+          `;
+        }
+      } else {
+        evalBox = `
+          <div class="text-emerald-900 font-bold text-sm">✓ Suara Anda berhasil direkam!</div>
+          <div class="text-xs text-slate-600">Dengarkan ulang rekaman Anda di bawah ini lalu bandingkan dengan contoh bacaan guru.</div>
+        `;
+        addScore('SkorKelancaran', 2);
+      }
+
+      const safeExp = escJs(expectedText);
+      el.innerHTML = `
+        <div class="p-4 rounded-2xl bg-white border-2 border-emerald-200 shadow-sm space-y-3 text-left">
+          ${evalBox}
+          <audio controls playsinline src="${playbackUrl}" class="w-full h-10"></audio>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="speakArabic('${safeExp}')" class="px-3.5 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-xs">🔊 Bandingkan Contoh</button>
+            <button onclick="tryPronounceCheck('${safeExp}', '${feedbackElementId}')" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs">🔁 Coba Ucapkan Lagi</button>
+          </div>
+        </div>
+      `;
+    };
+
+    recorder.start();
+  } catch (err) {
+    let msg = 'Izin mikrofon belum diberikan. Klik tombol "Aktifkan Audio & Mic" di bagian atas halaman.';
+    if (err.name === 'NotFoundError') msg = 'Mikrofon tidak ditemukan di perangkat Anda.';
+    updateMicStatusUI('error', msg);
+    el.innerHTML = `<div class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs font-semibold">⚠ ${msg}</div>`;
+  }
+}
+
+function addScore(metric, amount) {
+  appState.user[metric] = Math.min(100, (Number(appState.user[metric]) || 0) + amount);
+  appState.user.ProgressHarian = Math.min(100, (Number(appState.user.ProgressHarian) || 0) + 5);
+  persistState();
+}
+
+/* ============================================================================
+ * 4. NAVIGASI & RENDER HALAMAN
+ * ============================================================================ */
+
+function toggleMobileMenu() {
+  document.getElementById('sidebar').classList.toggle('-translate-x-full');
+  document.getElementById('mobile-overlay').classList.toggle('hidden');
+}
+
+function updateSidebarInfo() {
+  const uEl = document.getElementById('sidebar-username');
+  const sEl = document.getElementById('sidebar-streak');
+  const lEl = document.getElementById('sidebar-level');
+  if (uEl) uEl.textContent = appState.user.Nama;
+  if (sEl) sEl.textContent = `🔥 ${appState.user.StreakHari} Hari`;
+  if (lEl) lEl.textContent = `Level Saat Ini: Level ${appState.user.LevelAwal}`;
+}
+
+function navigateTo(page, subParam) {
+  stopActiveMicCapture();
+  appState.currentPage = page;
+  appState.confirmResetStep = false;
+  if (page === 'belajar' && subParam) appState.currentLevelView = subParam;
+
+  document.querySelectorAll('#main-nav .nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === page);
+  });
+
+  if (!document.getElementById('mobile-overlay').classList.contains('hidden')) {
+    toggleMobileMenu();
+  }
+
+  const container = document.getElementById('page-content');
+  switch (page) {
+    case 'beranda': container.innerHTML = renderBeranda(); break;
+    case 'belajar': container.innerHTML = renderBelajarMengaji(); break;
+    case 'hijaiyah': container.innerHTML = renderHijaiyahPage(); break;
+    case 'latihan': container.innerHTML = renderLatihanPage(); break;
+    case 'tajwid': container.innerHTML = renderTajwidPage(); break;
+    case 'setoran': container.innerHTML = renderSetoranPage(); break;
+    case 'progress': container.innerHTML = renderProgressPage(); break;
+    case 'prestasi': container.innerHTML = renderPrestasiPage(); break;
+    case 'guru': container.innerHTML = renderGuruPage(); break;
+    case 'pengaturan': container.innerHTML = renderPengaturanPage(); break;
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ============================================================================
+ * 5. HALAMAN BERANDA
+ * ============================================================================ */
+function renderBeranda() {
+  const u = appState.user;
+  const motivasi = MOTIVATIONS[new Date().getDate() % MOTIVATIONS.length];
+  return `
+    <div class="space-y-6">
+      <section class="bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-800 text-white rounded-3xl p-6 sm:p-8 shadow-lg relative overflow-hidden">
+        <div class="flex flex-col sm:flex-row items-center gap-6 relative z-10">
+          <div class="logo-slot w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-amber-400 bg-white overflow-hidden shadow-xl shrink-0 flex items-center justify-center">
+            ${getLogoMarkup()}
+          </div>
+          <div class="text-center sm:text-left flex-1">
+            <p class="text-amber-300 font-bold text-lg mb-1">Assalamu'alaikum 👋</p>
+            <h2 class="text-2xl sm:text-3xl font-extrabold leading-snug">Selamat datang di Ngaji Qur'an.</h2>
+            <p class="text-emerald-100 mt-2 text-base sm:text-lg max-w-xl">
+              Mulai dari kemampuan Anda. Tidak perlu malu untuk belajar dari nol. Kami akan menemani Anda dengan sabar langkah demi langkah.
+            </p>
+            <div class="mt-5 flex flex-wrap justify-center sm:justify-start gap-3">
+              <button onclick="navigateTo('belajar', ${u.LevelAwal})" class="btn-large px-7 py-3.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 text-lg shadow-md">
+                ▶ MULAI BELAJAR (Level ${u.LevelAwal})
+              </button>
+              <button onclick="openPlacementModal()" class="btn-large px-5 py-3 bg-white/15 hover:bg-white/25 text-white border border-white/30 text-sm">
+                🎯 Cek Level Saya
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm md:col-span-2">
+          <div class="flex justify-between items-center mb-2">
+            <span class="font-bold text-slate-800 text-base">Progress Anda hari ini: <span class="text-emerald-700">${u.ProgressHarian}%</span></span>
+            <span class="text-sm font-semibold text-amber-700 bg-amber-50 px-3 py-1 rounded-full">Target hari ini: ${u.TargetMenit} menit</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+            <div class="bg-emerald-600 h-4 rounded-full transition-all duration-500" style="width: ${u.ProgressHarian}%"></div>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button onclick="navigateTo('latihan')" class="btn-large px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-sm border border-emerald-200">
+              ⏱️ Latihan Mengaji Hari Ini
+            </button>
+            <button onclick="navigateTo('setoran')" class="btn-large px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 text-sm border border-amber-200">
+              🎙️ Setoran Bacaan
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 rounded-2xl p-5 border border-amber-200 flex flex-col justify-center items-center text-center">
+          <div class="text-4xl mb-1">🔥</div>
+          <div class="font-extrabold text-amber-900 text-xl">${u.StreakHari} Hari Berturut-turut</div>
+          <p class="text-xs text-amber-800 mt-1">Anda telah belajar mengaji selama ${u.StreakHari} hari berturut-turut. Pertahankan istiqamah!</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 border-l-4 border-emerald-600 shadow-sm flex items-start gap-4">
+        <div class="text-3xl">🌿</div>
+        <div>
+          <div class="text-xs font-bold uppercase tracking-wider text-emerald-700">Pesan Guru Mengaji Hari Ini</div>
+          <p class="text-slate-800 font-semibold text-base sm:text-lg mt-1 italic">"${motivasi}"</p>
+        </div>
+      </div>
+
+      <section class="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm">
+        <h3 class="font-extrabold text-lg text-emerald-950 mb-4">Alur Pembelajaran Bertahap (Dari Nol Sampai Tartil)</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          ${[
+            { lv: 1, title: 'Level 1', sub: 'Huruf Hijaiyah' },
+            { lv: 2, title: 'Level 2', sub: 'Belajar Harakat' },
+            { lv: 3, title: 'Level 3', sub: 'Sambung Huruf' },
+            { lv: 4, title: 'Level 4', sub: 'Ayat Pendek' },
+            { lv: 5, title: 'Level 5', sub: 'Lancar Mengaji' },
+            { lv: 6, title: 'Level 6', sub: 'Makhraj Huruf' },
+            { lv: 7, title: 'Level 7', sub: "Tahsin Qur'an" },
+            { lv: 8, title: 'Level 8', sub: 'Tajwid Dasar' },
+            { lv: 9, title: 'Level 9', sub: 'Mushaf Latihan' },
+            { lv: 10, title: 'Level 10', sub: 'Evaluasi Level' }
+          ].map(item => `
+            <button onclick="${item.lv === 10 ? 'openPlacementModal()' : `navigateTo('belajar', ${item.lv})`}"
+              class="p-3.5 rounded-xl border-2 text-left transition ${u.LevelAwal === item.lv ? 'border-emerald-600 bg-emerald-50' : 'border-slate-100 hover:border-emerald-300 bg-slate-50/50'}">
+              <div class="text-xs font-bold text-emerald-700">${item.title}</div>
+              <div class="font-bold text-slate-900 text-sm mt-0.5">${item.sub}</div>
+            </button>
+          `).join('')}
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+/* ============================================================================
+ * 6. HALAMAN BELAJAR MENGAJI (LEVEL 1 – 9)
+ * ============================================================================ */
+function renderBelajarMengaji() {
+  const lv = appState.currentLevelView || 1;
+  const tabs = [
+    { id: 1, label: 'Lv 1: Hijaiyah' },
+    { id: 2, label: 'Lv 2: Harakat' },
+    { id: 3, label: 'Lv 3: Sambung' },
+    { id: 4, label: 'Lv 4: Surah Pendek' },
+    { id: 5, label: 'Lv 5: Lancar' },
+    { id: 6, label: 'Lv 6: Makhraj' },
+    { id: 7, label: 'Lv 7: Tahsin' },
+    { id: 8, label: 'Lv 8: Tajwid' },
+    { id: 9, label: 'Lv 9: Mushaf' }
+  ];
+
+  let bodyHtml = '';
+  if (lv === 1) bodyHtml = renderHijaiyahPage(true);
+  else if (lv === 2) bodyHtml = renderLevel2Harakat();
+  else if (lv === 3) bodyHtml = renderLevel3Sambung();
+  else if (lv === 4) bodyHtml = renderLevel4SurahDasar();
+  else if (lv === 5) bodyHtml = renderLevel5Lancar();
+  else if (lv === 6) bodyHtml = renderLevel6Makhraj();
+  else if (lv === 7) bodyHtml = renderLevel7Tahsin();
+  else if (lv === 8) bodyHtml = renderTajwidPage(true);
+  else if (lv === 9) bodyHtml = renderLevel9Mushaf();
+
+  return `
+    <div class="space-y-5">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-2xl font-extrabold text-emerald-950">📖 Kurikulum Belajar Mengaji</h2>
+          <p class="text-slate-600 text-sm">Pelajari secara bertahap sesuai kenyamanan Anda.</p>
+        </div>
+        <button onclick="openPlacementModal()" class="btn-large px-4 py-2 bg-amber-100 text-amber-900 text-sm">🎯 Tes Penentuan Level</button>
+      </div>
+
+      <div class="flex overflow-x-auto gap-2 pb-2">
+        ${tabs.map(t => `
+          <button onclick="navigateTo('belajar', ${t.id})"
+            class="px-4 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap border transition ${lv === t.id ? 'bg-emerald-700 text-white border-emerald-700 shadow-sm' : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50'}">
+            ${t.label}
+          </button>
+        `).join('')}
+      </div>
+
+      ${bodyHtml}
+    </div>
+  `;
+}
+
+function renderHijaiyahPage(embedded = false) {
+  const h = HIJAIYAH_DATA[appState.selectedHijaiyahIdx];
+  return `
+    <div class="space-y-6">
+      ${!embedded ? `
+        <div>
+          <h2 class="text-2xl font-extrabold text-emerald-950">🔤 Level 1 – Mengenal Huruf Hijaiyah</h2>
+          <p class="text-slate-600">Klik huruf mana saja untuk mendengarkan bunyi, melihat bentuk sambung, dan berlatih mengucapkannya.</p>
+        </div>` : ''}
+
+      <div class="bg-white rounded-3xl p-6 border-2 border-emerald-100 shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div class="bg-emerald-50 rounded-2xl p-6 text-center border border-emerald-100">
+            <div class="arabic-hero text-emerald-900 font-bold">${h.char}</div>
+            <div class="text-2xl font-extrabold text-slate-900 mt-1">${h.name}</div>
+            <div class="text-sm text-emerald-700 font-semibold mt-1">Contoh Harakat: <span class="arabic-md">${h.ex}</span></div>
+            <div class="mt-4 flex flex-wrap justify-center gap-2">
+              <button onclick="speakArabic('${escJs(h.char)}', null, 'Huruf ${escJs(h.name)}')" class="btn-large px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-sm">🔊 Dengarkan</button>
+              <button onclick="tryPronounceCheck('${escJs(h.char)}', 'hijaiyah-feedback')" class="btn-large px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-sm">🎙️ Saya Coba</button>
+              <button onclick="speakArabic('${escJs(h.char)}', 0.7, 'Huruf ${escJs(h.name)} (Pelan)')" class="btn-large px-4 py-2.5 bg-white border-2 border-emerald-200 text-emerald-900 text-sm">🔁 Ulangi Pelan</button>
+            </div>
+            <div id="hijaiyah-feedback" class="mt-3 text-left"></div>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <h4 class="font-bold text-slate-800 text-sm uppercase tracking-wide mb-2">Bentuk Huruf dalam Kata</h4>
+              <div class="grid grid-cols-4 gap-2 text-center">
+                ${['Berdiri Sendiri','Di Awal','Di Tengah','Di Akhir'].map((lbl, idx) => `
+                  <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="arabic-text text-emerald-900">${h.forms[idx]}</div>
+                    <div class="text-xs text-slate-500 font-medium">${lbl}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200">
+              <div class="text-xs font-bold text-amber-900 uppercase">Makhraj Sederhana</div>
+              <p class="text-sm text-slate-800 mt-1 font-medium">${h.makhraj}</p>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+              <span class="text-sm font-semibold text-slate-700">Huruf yang Mirip:</span>
+              <span class="arabic-md font-bold text-emerald-800">${h.mirip}</span>
+            </div>
+            <button onclick="addScore('SkorHuruf', 4); showToast('Alhamdulillah! Penguasaan huruf ${escJs(h.name)} tercatat.');"
+              class="w-full btn-large bg-emerald-100 hover:bg-emerald-200 text-emerald-950 text-sm">
+              ✓ Tandai Saya Sudah Paham Huruf ${h.name}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-bold text-slate-900">Daftar Huruf Hijaiyah (ا sampai ي)</h3>
+          <button onclick="startHijaiyahQuiz()" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm">🎯 Kuis Tebak Suara</button>
+        </div>
+        <div id="hijaiyah-quiz-box" class="hidden mb-4 p-4 rounded-2xl bg-amber-50 border-2 border-amber-300"></div>
+        <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5" dir="rtl">
+          ${HIJAIYAH_DATA.map((item, idx) => `
+            <button onclick="selectHijaiyah(${idx})"
+              class="p-3 rounded-2xl border-2 text-center transition ${appState.selectedHijaiyahIdx === idx ? 'border-emerald-600 bg-emerald-50 shadow-sm' : 'border-slate-100 hover:border-emerald-300 bg-white'}">
+              <div class="arabic-text text-emerald-950 leading-none">${item.char}</div>
+              <div class="text-xs font-bold text-slate-600 mt-1" dir="ltr">${item.name}</div>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function selectHijaiyah(idx) {
+  appState.selectedHijaiyahIdx = idx;
+  speakArabic(HIJAIYAH_DATA[idx].char, null, 'Huruf ' + HIJAIYAH_DATA[idx].name);
+  navigateTo(appState.currentPage, appState.currentLevelView);
+}
+
+function startHijaiyahQuiz() {
+  const target = HIJAIYAH_DATA[Math.floor(Math.random() * HIJAIYAH_DATA.length)];
+  const opts = [target];
+  while (opts.length < 4) {
+    const r = HIJAIYAH_DATA[Math.floor(Math.random() * HIJAIYAH_DATA.length)];
+    if (!opts.includes(r)) opts.push(r);
+  }
+  opts.sort(() => Math.random() - 0.5);
+  speakArabic(target.char, null, 'Kuis Tebak Huruf');
+  const box = document.getElementById('hijaiyah-quiz-box');
+  box.classList.remove('hidden');
+  box.innerHTML = `
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <div class="font-bold text-amber-950">🔊 Kuis Tebak Huruf: Huruf apakah yang baru saja dibacakan?</div>
+      <button onclick="speakArabic('${escJs(target.char)}', null, 'Ulangi Kuis Huruf')" class="px-3 py-1.5 rounded-lg bg-white border border-amber-400 text-amber-900 font-bold text-xs">Ulangi Suara</button>
+    </div>
+    <div class="grid grid-cols-4 gap-3">
+      ${opts.map(o => `
+        <button onclick="checkHijaiyahQuiz('${escJs(o.char)}','${escJs(target.char)}','${escJs(target.name)}')"
+          class="p-3 rounded-xl bg-white hover:bg-emerald-50 border-2 border-amber-200 text-center">
+          <div class="arabic-text text-emerald-950">${o.char}</div>
+        </button>
+      `).join('')}
+    </div>
+    <div id="hijaiyah-quiz-res" class="mt-2 text-sm font-bold"></div>
+  `;
+}
+
+function checkHijaiyahQuiz(chosen, correct, correctName) {
+  const res = document.getElementById('hijaiyah-quiz-res');
+  if (chosen === correct) {
+    playUiTone('success');
+    res.innerHTML = `<span class="text-emerald-700">✓ Benar sekali! Itu adalah huruf ${escHtml(correctName)}. +5 poin Huruf Hijaiyah!</span>`;
+    addScore('SkorHuruf', 5);
+  } else {
+    res.innerHTML = `<span class="text-amber-800">Belum tepat, coba dengarkan lagi ya. Jawaban yang benar adalah ${escHtml(correctName)} (${correct}).</span>`;
+  }
+}
+
+function renderLevel2Harakat() {
+  return `
+    <div class="space-y-6">
+      <div class="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm">
+        <h3 class="text-xl font-extrabold text-emerald-950 mb-1">Level 2 – Mengenal 8 Tanda Baca (Harakat)</h3>
+        <p class="text-slate-600 text-sm mb-4">Tekan tombol Dengarkan pada setiap harakat untuk membedakan bunyinya.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          ${HARAKAT_DATA.map(hr => `
+            <div class="p-4 rounded-2xl border-2 border-slate-100 bg-slate-50/50 flex flex-col justify-between gap-3">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold text-xs">${hr.name} (${hr.sound})</span>
+                  <p class="text-sm text-slate-700 mt-2">${hr.desc}</p>
+                </div>
+                <div class="arabic-text text-emerald-800 font-bold bg-white px-4 py-1 rounded-xl border border-emerald-100">${hr.symbol}</div>
+              </div>
+              <div class="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between">
+                <div class="arabic-md text-slate-900">${hr.sampleArab}</div>
+                <button onclick="speakArabic('${escJs(hr.sampleArab)}', null, 'Harakat ${escJs(hr.name)}')" class="px-3.5 py-2 rounded-xl bg-emerald-700 text-white font-bold text-xs">🔊 Dengar</button>
+              </div>
+              <div class="text-xs text-slate-500 font-medium">${hr.ex}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm">
+        <h3 class="text-lg font-extrabold text-emerald-950 mb-3">Latihan Membaca Bertahap (1 → 2 → 3 Huruf)</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          ${[
+            { step: 'Tahap 1: Satu Huruf', items: ['بَ', 'بِ', 'بُ', 'تَ', 'ثِ', 'جُ'] },
+            { step: 'Tahap 2: Dua Huruf', items: ['بَ تَ', 'أَ بَ', 'جَ حَ', 'سَ شَ'] },
+            { step: 'Tahap 3: Tiga Huruf', items: ['كَ تَ بَ', 'قَ رَ أَ', 'فَ تَ حَ', 'جَ لَ سَ'] }
+          ].map(g => `
+            <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100">
+              <div class="font-bold text-emerald-900 text-sm mb-3">${g.step}</div>
+              <div class="flex flex-wrap gap-2" dir="rtl">
+                ${g.items.map(w => `
+                  <button onclick="speakArabic('${escJs(w)}', null, 'Latihan: ${escJs(w)}'); addScore('SkorHarakat', 2);"
+                    class="px-3.5 py-2 rounded-xl bg-white hover:bg-emerald-700 hover:text-white border border-emerald-200 arabic-md text-slate-900 transition">
+                    ${w}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLevel3Sambung() {
+  return `
+    <div class="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm space-y-5">
+      <div>
+        <h3 class="text-xl font-extrabold text-emerald-950">Level 3 – Belajar Menyambung Huruf Hijaiyah</h3>
+        <p class="text-slate-600 text-sm mt-1">Perhatikan bagaimana huruf berubah bentuk ketika disambung menjadi sebuah kata. Ingat: 6 huruf (ا د ذ ر ز و) tidak bisa menyambung ke huruf setelahnya.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        ${CONNECT_DATA.map(c => `
+          <div class="p-4 rounded-2xl border-2 border-slate-100 hover:border-emerald-300 bg-slate-50/40 flex items-center justify-between gap-3">
+            <div>
+              <div class="arabic-md text-slate-500">${c.parts}</div>
+              <div class="text-xs text-slate-500 mt-1">${c.note}</div>
+            </div>
+            <div class="text-center">
+              <div class="arabic-text text-emerald-900 font-bold">${c.result}</div>
+              <div class="text-xs font-bold text-amber-700">${c.read}</div>
+            </div>
+            <button onclick="speakArabic('${escJs(c.result)}', null, 'Kata: ${escJs(c.read)}'); addScore('SkorHarakat', 2);" class="btn-large px-3.5 py-2 bg-emerald-700 text-white text-sm">🔊</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderLevel4SurahDasar() {
+  const surah = SURAHS_DATA.find(s => s.id === appState.selectedSurahId) || SURAHS_DATA[0];
+  return `
+    <div class="space-y-5">
+      <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm">
+        <h3 class="text-xl font-extrabold text-emerald-950 mb-3">Level 4 – Pembacaan Dasar Al-Qur'an (7 Surah Pendek)</h3>
+        <div class="flex flex-wrap gap-2">
+          ${SURAHS_DATA.map(s => `
+            <button onclick="appState.selectedSurahId='${s.id}'; navigateTo('belajar', 4);"
+              class="px-4 py-2 rounded-xl font-bold text-sm border transition ${s.id === surah.id ? 'bg-emerald-700 text-white border-emerald-700' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50'}">
+              ${escHtml(s.name)}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        ${surah.ayat.map(a => `
+          <div class="bg-white rounded-2xl p-5 sm:p-6 border border-emerald-100 shadow-sm space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 font-bold text-xs">Surah ${escHtml(surah.name)} • Ayat ${a.no}</span>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="playQuranAyah(${surah.surahNo}, ${a.no}, '${escJs(a.arab)}', 'QS. ${escJs(surah.name)} : Ayat ${a.no}')" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs">🔊 Dengarkan Murottal</button>
+                <button onclick="playQuranAyah(${surah.surahNo}, ${a.no}, '${escJs(a.arab)}', 'QS. ${escJs(surah.name)} : Ayat ${a.no} (Pelan)', 0.75)" class="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs">🔁 Pelan</button>
+                <button onclick="tryPronounceCheck('${escJs(a.arab)}', 'lv4-fb-${surah.id}-${a.no}')" class="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs">🎙️ Saya Coba</button>
+              </div>
+            </div>
+            <div class="arabic-text text-right text-slate-900">${a.arab}</div>
+            <div class="text-sm font-semibold text-emerald-800">${a.latin}</div>
+            <div class="text-sm text-slate-600">"${a.id}"</div>
+            <div id="lv4-fb-${surah.id}-${a.no}"></div>
+            <div class="pt-2 border-t border-slate-100">
+              <div class="text-xs font-bold text-slate-500 mb-2">Pemenggalan Per Kata (Klik kata untuk mendengarkan):</div>
+              <div class="flex flex-wrap gap-2" dir="rtl">
+                ${a.words.map(w => `
+                  <button onclick="speakArabic('${escJs(w)}', null, 'Kata: ${escJs(w)}')" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-700 hover:text-white text-emerald-950 arabic-md border border-emerald-200 transition">${w}</button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderLevel5Lancar() {
+  const stages = [
+    { title: '1. Membaca Satu Kata', arab: 'الْحَمْدُ', hint: 'Ucapkan jelas dan tidak terburu-buru.' },
+    { title: '2. Membaca Dua – Tiga Kata', arab: 'الْحَمْدُ لِلّٰهِ رَبِّ', hint: 'Sambungkan bunyi antar kata dengan lembut.' },
+    { title: '3. Membaca Potongan Ayat', arab: 'اِيَّاكَ نَعْبُدُ وَاِيَّاكَ نَسْتَعِيْنُ', hint: 'Perhatikan tasydid pada Iyyaka dan panjang di akhir.' },
+    { title: '4. Membaca Satu Ayat Penuh', arab: 'اِهْدِنَا الصِّرَاطَ الْمُسْتَقِيْمَ', hint: 'Perhatikan huruf Shad dan Tha yang tebal.' },
+    { title: '5. Membaca Surah Pendek (Al-Ikhlas)', arab: 'قُلْ هُوَ اللّٰهُ اَحَدٌ ۝ اَللّٰهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُوْلَدْ ۝ وَلَمْ يَكُنْ لَّهٗ كُفُوًا اَحَدٌ', hint: 'Jaga tempo tartil dan pantulan Qalqalah di akhir ayat.' }
+  ];
+  const st = stages[appState.lancarStage] || stages[0];
+
+  return `
+    <div class="bg-white rounded-3xl p-6 border-2 border-emerald-100 shadow-sm space-y-6">
+      <div>
+        <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-bold text-xs">PROGRAM KHUSUS</span>
+        <h3 class="text-2xl font-extrabold text-emerald-950 mt-1">Level 5 – Program "Lancar Mengaji"</h3>
+        <p class="text-slate-600 text-sm">Dirancang khusus untuk Anda yang masih terbata-bata. Pilih mode belajar dan naikkan tahapan secara perlahan.</p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        ${['Ikuti Guru', 'Ikuti Audio', 'Saya Membaca Sendiri'].map(m => `
+          <button onclick="appState.lancarMode='${escJs(m)}'; navigateTo('belajar', 5);"
+            class="px-4 py-2.5 rounded-xl font-bold text-sm border-2 ${appState.lancarMode === m ? 'border-emerald-700 bg-emerald-50 text-emerald-900' : 'border-slate-200 text-slate-600'}">
+            ${m === 'Ikuti Guru' ? '👨‍🏫' : m === 'Ikuti Audio' ? '🎧' : '📖'} Mode: ${m}
+          </button>
+        `).join('')}
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        ${stages.map((s, idx) => `
+          <button onclick="appState.lancarStage=${idx}; navigateTo('belajar', 5);"
+            class="px-3.5 py-2 rounded-xl text-xs font-bold ${appState.lancarStage === idx ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-700'}">
+            Tahap ${idx + 1}
+          </button>
+        `).join('')}
+      </div>
+
+      <div class="p-6 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-center space-y-4">
+        <div class="text-sm font-bold text-emerald-800">${st.title} (${appState.lancarMode})</div>
+        <div class="arabic-text text-emerald-950 bg-white p-5 rounded-2xl border border-emerald-100">${st.arab}</div>
+        <p class="text-sm text-slate-600">💡 Tips Guru: ${st.hint}</p>
+        <div class="flex flex-wrap justify-center gap-3">
+          ${appState.lancarMode !== 'Saya Membaca Sendiri' ? `
+            <button onclick="speakArabic('${escJs(st.arab)}', 0.78, '${escJs(st.title)}')" class="btn-large px-5 py-3 bg-emerald-700 text-white text-sm">🔊 Dengarkan Contoh</button>
+          ` : ''}
+          <button onclick="tryPronounceCheck('${escJs(st.arab)}', 'lancar-feedback')" class="btn-large px-5 py-3 bg-amber-500 hover:bg-amber-600 text-white text-sm">🎙️ Mulai Membaca & Evaluasi</button>
+        </div>
+        <div id="lancar-feedback" class="text-left max-w-lg mx-auto"></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLevel6Makhraj() {
+  return `
+    <div class="space-y-6">
+      <div class="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm">
+        <h3 class="text-xl font-extrabold text-emerald-950 mb-2">Level 6 – Makharijul Huruf (5 Tempat Keluar Huruf)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center mt-4">
+          <div class="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 text-center">
+            <svg viewBox="0 0 220 200" class="w-full max-w-[220px] mx-auto">
+              <rect x="10" y="10" width="200" height="180" rx="18" fill="#ffffff" stroke="#a7f3d0" stroke-width="2"/>
+              <circle cx="110" cy="45" r="18" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+              <text x="110" y="49" text-anchor="middle" font-size="10" font-weight="bold" fill="#92400e">Al-Khaisyum</text>
+              <rect x="45" y="75" width="75" height="28" rx="10" fill="#ecfdf5" stroke="#047857" stroke-width="2"/>
+              <text x="82" y="93" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46">Al-Lisan (Lidah)</text>
+              <rect x="130" y="75" width="60" height="28" rx="10" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+              <text x="160" y="93" text-anchor="middle" font-size="9" font-weight="bold" fill="#0369a1">Syafatain</text>
+              <rect x="65" y="115" width="90" height="26" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="2"/>
+              <text x="110" y="132" text-anchor="middle" font-size="10" font-weight="bold" fill="#334155">Al-Jauf (Rongga)</text>
+              <rect x="75" y="152" width="70" height="28" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+              <text x="110" y="170" text-anchor="middle" font-size="10" font-weight="bold" fill="#991b1b">Al-Halq</text>
+            </svg>
+            <p class="text-xs text-slate-600 mt-2 font-semibold">Diagram 5 Posisi Utama Makhraj</p>
+          </div>
+          <div class="md:col-span-2 space-y-3">
+            ${MAKHRAJ_DATA.map(m => `
+              <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div class="font-bold text-emerald-900">${m.name}</div>
+                  <div class="text-xs text-slate-600 mt-0.5">${m.desc}</div>
+                  <div class="arabic-md text-amber-800 mt-1">${m.letters}</div>
+                </div>
+                <button onclick="speakArabic('${escJs(m.sample)}', null, '${escJs(m.name)}'); addScore('SkorMakhraj', 3);" class="btn-large px-4 py-2 bg-emerald-700 text-white text-xs shrink-0">🔊 Contoh</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm">
+        <h3 class="text-lg font-extrabold text-emerald-950 mb-3">Latihan Khusus: Huruf yang Sering Tertukar</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          ${SIMILAR_LETTERS.map(s => `
+            <div class="p-4 rounded-xl border border-amber-200 bg-amber-50/40 flex items-center justify-between gap-3">
+              <div>
+                <div class="arabic-md font-bold text-emerald-950">${s.group}</div>
+                <p class="text-xs text-slate-700 mt-1">${s.tip}</p>
+              </div>
+              <button onclick="speakArabic('${escJs(s.sample)}', null, 'Perbandingan: ${escJs(s.group)}'); addScore('SkorMakhraj', 2);" class="px-3.5 py-2 rounded-xl bg-amber-500 text-white font-bold text-xs shrink-0">🔊 Dengar</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLevel7Tahsin() {
+  return `
+    <div class="space-y-4">
+      <div class="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm">
+        <h3 class="text-xl font-extrabold text-emerald-950">Level 7 – Program Tahsin Al-Qur'an</h3>
+        <p class="text-sm text-slate-600 mt-1">Alur belajar: <b>Materi → Contoh → Audio → Latihan → Evaluasi → Pengulangan</b>.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        ${TAHSIN_MODULES.map((t, i) => `
+          <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm flex flex-col justify-between gap-3">
+            <div>
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-bold text-xs">Materi ${i+1}</span>
+              <h4 class="font-extrabold text-slate-900 text-lg mt-1">${t.title}</h4>
+              <p class="text-sm text-slate-600 mt-1">${t.materi}</p>
+              <div class="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-center">
+                <div class="arabic-text text-emerald-950">${t.arab}</div>
+                <div class="text-xs text-emerald-800 font-semibold mt-1">${t.contoh}</div>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="speakArabic('${escJs(t.arab)}', 0.85, 'Tahsin: ${escJs(t.title)}')" class="flex-1 btn-large py-2 bg-emerald-700 text-white text-xs">🔊 Audio</button>
+              <button onclick="tryPronounceCheck('${escJs(t.arab)}', 'tahsin-fb-${t.id}')" class="flex-1 btn-large py-2 bg-amber-500 text-white text-xs">🎙️ Latihan</button>
+              <button onclick="addScore('SkorTahsin', 5); showToast('Latihan Tahsin ${escJs(t.title)} selesai! +5 poin.');" class="btn-large px-3 py-2 bg-slate-100 text-slate-800 text-xs">✓ Selesai</button>
+            </div>
+            <div id="tahsin-fb-${t.id}"></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderTajwidPage(embedded = false) {
+  return `
+    <div class="space-y-6">
+      ${!embedded ? `
+        <div>
+          <h2 class="text-2xl font-extrabold text-emerald-950">📚 Level 8 – Pembelajaran Tajwid Dasar</h2>
+          <p class="text-slate-600 text-sm">Pelajari hukum tajwid secara praktis lengkap dengan contoh ayat asli, audio, dan kuis singkat.</p>
+        </div>` : ''}
+
+      ${TAJWID_DATA.map((group, gIdx) => `
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-emerald-100 shadow-sm space-y-4">
+          <h3 class="text-lg font-extrabold text-emerald-900 border-b border-emerald-100 pb-2">${group.cat}</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${group.rules.map((r, rIdx) => `
+              <div class="p-4 rounded-2xl border-2 border-slate-100 bg-slate-50/40 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <h4 class="font-extrabold text-slate-900 text-base">${r.name}</h4>
+                  <button onclick="speakArabic('${escJs(r.example.split('/')[0])}', null, 'Tajwid: ${escJs(r.name)}')" class="px-3 py-1.5 rounded-lg bg-emerald-700 text-white font-bold text-xs">🔊 Dengar</button>
+                </div>
+                <p class="text-sm text-slate-700"><b>Definisi:</b> ${r.def}</p>
+                <p class="text-xs text-slate-600"><b>Cara Baca:</b> ${r.how}</p>
+                <div class="p-2.5 rounded-xl bg-white border border-slate-200 flex justify-between items-center">
+                  <span class="text-xs font-bold text-slate-500">Huruf:</span>
+                  <span class="arabic-md text-amber-800 font-bold">${r.letters}</span>
+                </div>
+                <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-100 text-center">
+                  <div class="text-xs text-emerald-700 font-bold">Contoh Al-Qur'an:</div>
+                  <div class="arabic-md text-emerald-950">${r.example}</div>
+                </div>
+                <div class="pt-2 border-t border-slate-200">
+                  <div class="text-xs font-bold text-slate-800 mb-1.5">Kuis: ${r.quizQ}</div>
+                  <div class="grid grid-cols-2 gap-1.5">
+                    ${r.opts.map((opt, oIdx) => `
+                      <button onclick="answerTajwidQuiz(${gIdx},${rIdx},${oIdx},${r.ans})"
+                        class="px-2.5 py-2 rounded-lg bg-white hover:bg-amber-50 border border-slate-200 text-xs font-semibold text-slate-800">
+                        ${opt}
+                      </button>
+                    `).join('')}
+                  </div>
+                  <div id="tq-${gIdx}-${rIdx}" class="text-xs font-bold mt-1.5"></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function answerTajwidQuiz(gIdx, rIdx, chosen, ans) {
+  const el = document.getElementById(`tq-${gIdx}-${rIdx}`);
+  if (chosen === ans) {
+    playUiTone('success');
+    el.innerHTML = `<span class="text-emerald-700">✓ Tepat sekali! Pemahaman tajwid Anda bertambah (+4 poin).</span>`;
+    addScore('SkorTajwid', 4);
+  } else {
+    el.innerHTML = `<span class="text-amber-700">Belum tepat, silakan baca ulang definisinya dan coba lagi ya.</span>`;
+  }
+}
+
+function renderLevel9Mushaf() {
+  const surah = SURAHS_DATA.find(s => s.id === appState.selectedMushafSurahId) || SURAHS_DATA[0];
+  return `
+    <div class="space-y-5">
+      <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h3 class="text-xl font-extrabold text-emerald-950">Level 9 – Mushaf Pembelajaran Bertahap</h3>
+          <p class="text-xs text-slate-600">Pilih surah, atur kecepatan audio, ulangi per ayat/kata, dan tandai ayat yang sudah dikuasai.</p>
+        </div>
+        <div class="flex flex-wrap gap-2 items-center">
+          <select onchange="appState.selectedMushafSurahId=this.value; navigateTo('belajar', 9);"
+            class="px-4 py-2.5 rounded-xl border-2 border-emerald-200 font-bold text-sm bg-white">
+            ${SURAHS_DATA.map(s => `<option value="${s.id}" ${s.id === surah.id ? 'selected' : ''}>Juz ${s.juz} – QS. ${escHtml(s.name)}</option>`).join('')}
+          </select>
+          <select onchange="appState.audioRate=parseFloat(this.value); persistState(); showToast('Kecepatan audio: '+this.value+'x');"
+            class="px-3 py-2.5 rounded-xl border-2 border-amber-200 font-bold text-sm bg-amber-50">
+            <option value="0.75" ${appState.audioRate == 0.75 ? 'selected' : ''}>🐢 0.75x (Pelan)</option>
+            <option value="1" ${appState.audioRate == 1 ? 'selected' : ''}>▶ 1.0x (Normal)</option>
+            <option value="1.25" ${appState.audioRate == 1.25 ? 'selected' : ''}>⚡ 1.25x (Cepat)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        ${surah.ayat.map(a => {
+          const key = `${surah.id}:${a.no}`;
+          const st = (appState.user.AyatStatus || {})[key] || '';
+          return `
+            <div class="bg-white rounded-2xl p-5 border-2 ${st === 'dikuasai' ? 'border-emerald-400 bg-emerald-50/30' : st === 'dipelajari' ? 'border-amber-300 bg-amber-50/20' : 'border-slate-100'} shadow-sm">
+              <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+                <span class="font-bold text-sm text-emerald-900">Ayat ${a.no}</span>
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="playQuranAyah(${surah.surahNo}, ${a.no}, '${escJs(a.arab)}', 'QS. ${escJs(surah.name)} : Ayat ${a.no}')" class="px-3 py-1.5 rounded-lg bg-emerald-700 text-white font-bold text-xs">🔊 Putar Ayat</button>
+                  <button onclick="tryPronounceCheck('${escJs(a.arab)}', 'mushaf-fb-${a.no}')" class="px-3 py-1.5 rounded-lg bg-amber-500 text-white font-bold text-xs">🎙️ Coba Baca</button>
+                  <button onclick="markAyatStatus('${escJs(key)}', 'dipelajari')" class="px-3 py-1.5 rounded-lg border text-xs font-bold ${st === 'dipelajari' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-amber-800 border-amber-300'}">📌 Sedang Dipelajari</button>
+                  <button onclick="markAyatStatus('${escJs(key)}', 'dikuasai')" class="px-3 py-1.5 rounded-lg border text-xs font-bold ${st === 'dikuasai' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-800 border-emerald-300'}">✓ Sudah Dikuasai</button>
+                </div>
+              </div>
+              <div class="arabic-text text-right text-slate-950">${a.arab}</div>
+              <div class="text-xs text-slate-600 mt-2">${a.id}</div>
+              <div id="mushaf-fb-${a.no}" class="mt-2"></div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function markAyatStatus(key, status) {
+  if (!appState.user.AyatStatus) appState.user.AyatStatus = {};
+  appState.user.AyatStatus[key] = status;
+  if (status === 'dikuasai') addScore('SkorKelancaran', 3);
+  else persistState();
+  navigateTo('belajar', 9);
+}
+
+/* ============================================================================
+ * 7. HALAMAN LATIHAN BACAAN HARIAN
+ * ============================================================================ */
+function renderLatihanPage() {
+  const steps = [
+    { name: '1. Pemanasan Huruf', arab: 'ا – ب – ت – ث – ج – ح – خ', desc: 'Bacalah 7 huruf pertama dengan makhraj yang jelas.' },
+    { name: '2. Latihan Harakat', arab: 'بَ بِ بُ – تَ تِ تُ – كَ كِ كُ', desc: 'Pastikan bunyi a, i, u terbuka dengan sempurna.' },
+    { name: '3. Latihan Kata', arab: 'كَتَبَ – فَتَحَ – عَلِمَ – نَصَرَ', desc: 'Baca setiap kata secara bersambung tanpa terputus.' },
+    { name: '4. Latihan Ayat', arab: 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ', desc: 'Perhatikan ketipisan Lam pada Bismillah dan panjang di akhir.' },
+    { name: '5. Latihan Tajwid', arab: 'مِنْ شَرِّ مَا خَلَقَ', desc: 'Samarkan Nun sukun bertemu Syin (Ikhfa) dan pantulkan Qaf di akhir.' },
+    { name: '6. Evaluasi Singkat', arab: 'قُلْ هُوَ اللّٰهُ اَحَدٌ', desc: 'Tekan tombol evaluasi suara untuk menyelesaikan latihan hari ini.' }
+  ];
+  const cur = steps[appState.dailyStep] || steps[0];
+  const mins = Math.floor(appState.dailySecondsLeft / 60);
+  const secs = appState.dailySecondsLeft % 60;
+
+  return `
+    <div class="space-y-6">
+      <div>
+        <h2 class="text-2xl font-extrabold text-emerald-950">🔊 Latihan Mengaji Hari Ini</h2>
+        <p class="text-slate-600 text-sm">Pilih durasi yang nyaman untuk Anda, lalu ikuti 6 langkah latihan terpandu.</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap gap-2">
+          ${[5, 10, 15, 30].map(m => `
+            <button onclick="startDailyTimer(${m})" class="btn-large px-5 py-2.5 bg-emerald-50 hover:bg-emerald-700 hover:text-white text-emerald-900 border border-emerald-200 text-sm">
+              ⏱️ ${m} Menit
+            </button>
+          `).join('')}
+        </div>
+        <div class="px-5 py-2.5 rounded-2xl bg-amber-50 border-2 border-amber-300 font-extrabold text-xl text-amber-900" id="daily-timer-display">
+          ${appState.dailySecondsLeft > 0 ? `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}` : 'Siap Mulai'}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 border-2 border-emerald-100 shadow-sm space-y-5">
+        <div class="flex flex-wrap gap-2">
+          ${steps.map((s, idx) => `
+            <button onclick="appState.dailyStep=${idx}; navigateTo('latihan');"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold ${appState.dailyStep === idx ? 'bg-emerald-700 text-white' : 'bg-slate-100 text-slate-600'}">
+              Langkah ${idx+1}
+            </button>
+          `).join('')}
+        </div>
+
+        <div class="p-6 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-center space-y-4">
+          <div class="font-extrabold text-emerald-900 text-lg">${cur.name}</div>
+          <div class="arabic-text text-emerald-950 bg-white p-5 rounded-2xl border border-emerald-100">${cur.arab}</div>
+          <p class="text-sm text-slate-700">${cur.desc}</p>
+          <div class="flex flex-wrap justify-center gap-3">
+            <button onclick="speakArabic('${escJs(cur.arab)}', null, '${escJs(cur.name)}')" class="btn-large px-5 py-2.5 bg-emerald-700 text-white text-sm">🔊 Dengarkan</button>
+            <button onclick="tryPronounceCheck('${escJs(cur.arab)}', 'daily-fb')" class="btn-large px-5 py-2.5 bg-amber-500 text-white text-sm">🎙️ Coba Baca</button>
+            ${appState.dailyStep < 5 ? `
+              <button onclick="appState.dailyStep++; navigateTo('latihan');" class="btn-large px-5 py-2.5 bg-slate-800 text-white text-sm">Langkah Berikutnya →</button>
+            ` : `
+              <button onclick="finishDailyPractice()" class="btn-large px-6 py-2.5 bg-emerald-600 text-white text-sm">✓ Selesaikan Latihan Hari Ini</button>
+            `}
+          </div>
+          <div id="daily-fb" class="text-left max-w-md mx-auto"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function startDailyTimer(minutes) {
+  clearInterval(appState.dailyTimerInterval);
+  appState.dailySecondsLeft = minutes * 60;
+  appState.user.TargetMenit = minutes;
+  persistState();
+  showToast(`Timer latihan ${minutes} menit dimulai. Bismillah!`);
+  appState.dailyTimerInterval = setInterval(() => {
+    if (appState.dailySecondsLeft > 0) {
+      appState.dailySecondsLeft--;
+      const el = document.getElementById('daily-timer-display');
+      if (el) {
+        const m = Math.floor(appState.dailySecondsLeft / 60);
+        const s = appState.dailySecondsLeft % 60;
+        el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      }
+    } else {
+      clearInterval(appState.dailyTimerInterval);
+    }
+  }, 1000);
+}
+
+function finishDailyPractice() {
+  clearInterval(appState.dailyTimerInterval);
+  appState.user.ProgressHarian = 100;
+  appState.user.SkorKelancaran = Math.min(100, appState.user.SkorKelancaran + 5);
+  persistState();
+  playUiTone('success');
+  showToast('Alhamdulillah! Latihan harian Anda tuntas 100%.');
+  navigateTo('progress');
+}
+
+/* ============================================================================
+ * 8. HALAMAN SETORAN BACAAN (HTML5 MEDIA RECORDER)
+ * ============================================================================ */
+function renderSetoranPage() {
+  const surah = SURAHS_DATA.find(s => s.id === appState.selectedSurahId) || SURAHS_DATA[0];
+  return `
+    <div class="space-y-6">
+      <div>
+        <h2 class="text-2xl font-extrabold text-emerald-950">🎙️ Setoran Bacaan Al-Qur'an</h2>
+        <p class="text-slate-600 text-sm">Rekam bacaan Anda secara langsung, dengarkan ulang, dan simpan ke daftar pemeriksaan Guru/Murobbi.</p>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 border-2 border-emerald-100 shadow-sm space-y-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">1. Pilih Surah</label>
+            <select id="setoran-surah" onchange="appState.selectedSurahId=this.value; navigateTo('setoran');"
+              class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 font-bold text-sm">
+              ${SURAHS_DATA.map(s => `<option value="${s.id}" ${s.id === surah.id ? 'selected' : ''}>QS. ${escHtml(s.name)}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">2. Pilih Ayat</label>
+            <select id="setoran-ayat" onchange="updateSetoranPreview()"
+              class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 font-bold text-sm">
+              ${surah.ayat.map((a, idx) => `<option value="${idx}">Ayat ${a.no}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
+          <div id="setoran-arab" class="arabic-text text-emerald-950">${surah.ayat[0].arab}</div>
+          <div id="setoran-id" class="text-sm text-slate-600">${surah.ayat[0].id}</div>
+          <div class="flex flex-wrap justify-center gap-3 pt-2">
+            <button onclick="playSelectedSetoranAyah()" class="btn-large px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-sm">🔊 3. Dengarkan Contoh</button>
+            <button id="btn-start-rec" onclick="startSetoranRecording()" class="btn-large px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm">⏺ 4. Mulai Rekam</button>
+            <button id="btn-stop-rec" onclick="stopSetoranRecording()" class="hidden btn-large px-6 py-2.5 bg-slate-900 text-white text-sm animate-pulse">⏹ Selesai Rekam (<span id="setoran-rec-timer">0:00</span>)</button>
+          </div>
+          <div id="setoran-mic-meter-wrap" class="hidden max-w-md mx-auto pt-2">
+            <div class="text-xs font-bold text-rose-700 mb-1">🎙️ Mikrofon aktif — bacalah ayat di atas dengan tenang</div>
+            <div class="w-full bg-rose-100 rounded-full h-3 overflow-hidden">
+              <div id="setoran-mic-meter" class="bg-rose-600 h-3 rounded-full transition-all duration-75" style="width: 10%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="setoran-player-area" class="hidden p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+          <div class="font-bold text-slate-800 text-sm">Hasil Rekaman Anda:</div>
+          <audio id="setoran-audio-preview" controls playsinline class="w-full"></audio>
+          <div id="setoran-auto-fb" class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-900 font-medium"></div>
+          <div class="flex flex-wrap gap-3">
+            <button id="btn-send-setoran" onclick="sendSetoranToGuru()" class="btn-large px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white text-sm disabled:opacity-50">📤 Simpan Setoran untuk Guru</button>
+            <button onclick="startSetoranRecording()" class="btn-large px-5 py-3 bg-white border-2 border-slate-200 text-slate-700 text-sm">🔁 Rekam Ulang</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function playSelectedSetoranAyah() {
+  const surah = SURAHS_DATA.find(s => s.id === appState.selectedSurahId) || SURAHS_DATA[0];
+  const idx = parseInt((document.getElementById('setoran-ayat') || {}).value || '0', 10);
+  const a = surah.ayat[idx] || surah.ayat[0];
+  playQuranAyah(surah.surahNo, a.no, a.arab, `Contoh Setoran: QS. ${surah.name} Ayat ${a.no}`);
+}
+
+function updateSetoranPreview() {
+  const surah = SURAHS_DATA.find(s => s.id === appState.selectedSurahId) || SURAHS_DATA[0];
+  const idx = parseInt(document.getElementById('setoran-ayat').value || '0', 10);
+  const a = surah.ayat[idx] || surah.ayat[0];
+  document.getElementById('setoran-arab').textContent = a.arab;
+  document.getElementById('setoran-id').textContent = a.id;
+}
+
+async function startSetoranRecording() {
+  unlockAudioEngine();
+  stopAllAudio(false);
+  stopActiveMicCapture();
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('Browser Anda belum mendukung perekaman mikrofon. Gunakan Chrome atau Safari terbaru.');
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+    });
+    audioEngine.micPermitted = true;
+    audioEngine.activeStream = stream;
+    updateMicStatusUI('ok', 'Audio & Mikrofon AKTIF dan siap digunakan di perangkat ini.');
+    playUiTone('start');
+
+    const mimeType = getSupportedAudioMimeType();
+    appState.audioChunks = [];
+    appState.lastRecordedBase64 = '';
+    appState.mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    audioEngine.activeRecorder = appState.mediaRecorder;
+    audioEngine.recSeconds = 0;
+
+    appState.mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) appState.audioChunks.push(e.data); };
+    appState.mediaRecorder.onstop = () => {
+      stopMicVisualizer();
+      clearInterval(audioEngine.recTimerInterval);
+      stream.getTracks().forEach(t => t.stop());
+      audioEngine.activeStream = null;
+      playUiTone('stop');
+
+      const wrap = document.getElementById('setoran-mic-meter-wrap');
+      if (wrap) wrap.classList.add('hidden');
+
+      const blob = new Blob(appState.audioChunks, { type: mimeType || 'audio/mp4' });
+      const url = URL.createObjectURL(blob);
+      const previewEl = document.getElementById('setoran-audio-preview');
+      if (previewEl) {
+        previewEl.src = url;
+        previewEl.load();
+      }
+      const playerArea = document.getElementById('setoran-player-area');
+      if (playerArea) playerArea.classList.remove('hidden');
+
+      const sendBtn = document.getElementById('btn-send-setoran');
+      const fbEl = document.getElementById('setoran-auto-fb');
+      if (sendBtn) sendBtn.disabled = true;
+      if (fbEl) fbEl.textContent = '⏳ Menyiapkan berkas audio rekaman...';
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        appState.lastRecordedBase64 = reader.result;
+        if (sendBtn) sendBtn.disabled = false;
+        appState.lastSpeechFeedback = 'Rekaman Anda telah tersimpan dan siap diperiksa oleh guru.';
+        if (fbEl) fbEl.textContent = '✓ ' + appState.lastSpeechFeedback;
+      };
+      reader.readAsDataURL(blob);
+    };
+
+    appState.mediaRecorder.start();
+    document.getElementById('btn-start-rec').classList.add('hidden');
+    document.getElementById('btn-stop-rec').classList.remove('hidden');
+    document.getElementById('setoran-mic-meter-wrap').classList.remove('hidden');
+    startMicVisualizer(stream, 'setoran-mic-meter');
+
+    audioEngine.recTimerInterval = setInterval(() => {
+      audioEngine.recSeconds++;
+      const tEl = document.getElementById('setoran-rec-timer');
+      if (tEl) tEl.textContent = formatAudioTime(audioEngine.recSeconds);
+    }, 1000);
+
+    showToast('Perekaman dimulai... silakan membaca dengan tenang.');
+  } catch (err) {
+    let msg = 'Izin mikrofon ditolak. Klik tombol "Aktifkan Audio & Mic" di bagian atas halaman.';
+    if (err.name === 'NotFoundError') msg = 'Mikrofon tidak ditemukan di HP/PC Anda.';
+    updateMicStatusUI('error', msg);
+    showToast('⚠ ' + msg);
+  }
+}
+
+function stopSetoranRecording() {
+  if (appState.mediaRecorder && appState.mediaRecorder.state !== 'inactive') {
+    appState.mediaRecorder.stop();
+  }
+  const btnStart = document.getElementById('btn-start-rec');
+  const btnStop = document.getElementById('btn-stop-rec');
+  if (btnStart) btnStart.classList.remove('hidden');
+  if (btnStop) btnStop.classList.add('hidden');
+}
+
+function sendSetoranToGuru() {
+  const surah = SURAHS_DATA.find(s => s.id === appState.selectedSurahId) || SURAHS_DATA[0];
+  const idx = parseInt(document.getElementById('setoran-ayat').value || '0', 10);
+  const label = `QS. ${surah.name} : Ayat ${surah.ayat[idx].no}`;
+
+  appState.guruData.submissions.unshift({
+    IDSetoran: 'STR-' + Date.now(),
+    NamaSiswa: appState.user.Nama,
+    SurahAyat: label,
+    AudioBase64_atau_Link: appState.lastRecordedBase64,
+    FeedbackOtomatis: appState.lastSpeechFeedback || 'Rekaman Anda telah tersimpan dan siap diperiksa oleh guru.',
+    CatatanGuru: '',
+    NilaiGuru: '',
+    Status: 'Menunggu Pemeriksaan',
+    Tanggal: getTodayStr()
+  });
+  addScore('SkorKelancaran', 4);
+  playUiTone('success');
+  showToast('✓ Alhamdulillah! Setoran bacaan tersimpan dan siap diperiksa di menu Guru/Murobbi.');
+}
+
+/* ============================================================================
+ * 9. HALAMAN PROGRESS SAYA & PRESTASI
+ * ============================================================================ */
+function getGradeLabel(score) {
+  if (score >= 90) return { text: 'Sangat baik', cls: 'text-emerald-700 bg-emerald-100' };
+  if (score >= 75) return { text: 'Baik', cls: 'text-teal-700 bg-teal-100' };
+  if (score >= 60) return { text: 'Mulai berkembang', cls: 'text-amber-700 bg-amber-100' };
+  return { text: 'Perlu bimbingan', cls: 'text-rose-700 bg-rose-100' };
+}
+
+function renderProgressPage() {
+  const u = appState.user;
+  const metrics = [
+    { label: 'Huruf Hijaiyah', val: u.SkorHuruf },
+    { label: 'Harakat', val: u.SkorHarakat },
+    { label: 'Kelancaran', val: u.SkorKelancaran },
+    { label: 'Makhraj Huruf', val: u.SkorMakhraj },
+    { label: 'Tajwid', val: u.SkorTajwid },
+    { label: 'Tahsin', val: u.SkorTahsin }
+  ];
+  const sorted = [...metrics].sort((a, b) => a.val - b.val);
+  const recText = `Fokus latihan Anda berikutnya adalah ${sorted[0].label} dan ${sorted[1].label}.`;
+
+  return `
+    <div class="space-y-6">
+      <div>
+        <h2 class="text-2xl font-extrabold text-emerald-950">📈 Progress Mengaji Saya</h2>
+        <p class="text-slate-600 text-sm">Pantau perkembangan kemampuan membaca Al-Qur'an Anda secara menyeluruh.</p>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 border border-emerald-100 shadow-sm space-y-5">
+        <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center gap-3">
+          <span class="text-2xl">💡</span>
+          <div>
+            <div class="text-xs font-bold uppercase text-amber-800">Rekomendasi Otomatis Guru Digital</div>
+            <div class="font-bold text-slate-900">${recText}</div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          ${metrics.map(m => {
+            const g = getGradeLabel(m.val);
+            return `
+              <div>
+                <div class="flex justify-between items-center mb-1.5">
+                  <span class="font-bold text-slate-800">${m.label}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${g.cls}">${g.text}</span>
+                    <span class="font-extrabold text-emerald-900 w-11 text-right">${m.val}%</span>
+                  </div>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden">
+                  <div class="bg-emerald-600 h-3.5 rounded-full transition-all" style="width:${m.val}%"></div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPrestasiPage() {
+  const u = appState.user;
+  return `
+    <div class="space-y-6">
+      <div>
+        <h2 class="text-2xl font-extrabold text-emerald-950">🏆 Prestasi & Lencana Istiqamah</h2>
+        <p class="text-slate-600 text-sm">Setiap usaha kecil Anda dicatat sebagai pencapaian yang membanggakan.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        ${BADGES_CONFIG.map(b => {
+          const unlocked = b.check(u);
+          return `
+            <div class="p-5 rounded-2xl border-2 text-center transition ${unlocked ? 'bg-white border-amber-400 shadow-sm' : 'bg-slate-100/70 border-slate-200 opacity-60'}">
+              <div class="text-4xl mb-2">${b.icon}</div>
+              <div class="font-extrabold text-slate-900 text-sm">${b.title}</div>
+              <p class="text-xs text-slate-600 mt-1">${b.desc}</p>
+              <div class="mt-3">
+                <span class="px-3 py-1 rounded-full text-xs font-bold ${unlocked ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
+                  ${unlocked ? '✓ Tercapai' : '🔒 Belum Terbuka'}
+                </span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================================
+ * 10. HALAMAN GURU / MUROBBI (PENUH DI HTML5)
+ * ============================================================================ */
+function renderGuruPage() {
+  const g = appState.guruData;
+  return `
+    <div class="space-y-6">
+      <div class="flex flex-wrap justify-between items-center gap-3">
+        <div>
+          <h2 class="text-2xl font-extrabold text-emerald-950">👨‍🏫 Dashboard Guru / Murobbi</h2>
+          <p class="text-slate-600 text-sm">Kelola kelas, tugas, pantau perkembangan peserta didik, dan periksa setoran bacaan.</p>
+        </div>
+        <button onclick="exportBackupJSON()" class="btn-large px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-sm">💾 Ekspor Laporan (JSON)</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm space-y-3">
+          <h3 class="font-extrabold text-emerald-900">➕ Buat Kelas Baru</h3>
+          <input id="in-nama-kelas" type="text" placeholder="Nama Kelas (mis. Tahsin Dasar A)" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm" />
+          <input id="in-nama-guru" type="text" placeholder="Nama Guru / Murobbi" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm" />
+          <button onclick="handleCreateClass()" class="w-full btn-large bg-emerald-700 text-white text-sm">Simpan Kelas</button>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm space-y-3">
+          <h3 class="font-extrabold text-emerald-900">➕ Tambah Peserta Didik</h3>
+          <input id="in-nama-siswa" type="text" placeholder="Nama Lengkap Siswa" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm" />
+          <select id="in-level-siswa" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+            <option value="1">Level 1 – Huruf Hijaiyah</option>
+            <option value="2">Level 2 – Harakat</option>
+            <option value="5">Level 5 – Lancar Mengaji</option>
+            <option value="7">Level 7 – Tahsin</option>
+            <option value="8">Level 8 – Tajwid Dasar</option>
+          </select>
+          <button onclick="handleAddStudent()" class="w-full btn-large bg-amber-500 text-white text-sm">Tambahkan Siswa</button>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm space-y-3">
+          <h3 class="font-extrabold text-emerald-900">📝 Berikan Tugas</h3>
+          <input id="in-judul-tugas" type="text" placeholder="Judul Tugas (mis. Setoran Al-Ikhlas)" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm" />
+          <input id="in-tenggat-tugas" type="text" placeholder="Tenggat (mis. Ahad Sore)" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm" />
+          <button onclick="handleCreateTask()" class="w-full btn-large bg-slate-800 text-white text-sm">Kirim Tugas</button>
+        </div>
+      </div>
+
+      <!-- DAFTAR KELAS & TUGAS AKTIF -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm">
+          <h3 class="font-extrabold text-emerald-950 mb-3">🏫 Daftar Kelas (${g.classes.length})</h3>
+          <div class="space-y-2">
+            ${g.classes.map(c => `
+              <div class="p-3 rounded-xl bg-emerald-50/60 border border-emerald-100 flex justify-between items-center text-sm">
+                <div>
+                  <div class="font-bold text-emerald-950">${escHtml(c.NamaKelas)}</div>
+                  <div class="text-xs text-slate-600">Pengajar: ${escHtml(c.NamaGuru)}</div>
+                </div>
+                <span class="px-2.5 py-1 rounded-lg bg-white border border-emerald-200 font-mono text-xs font-bold text-emerald-800">${escHtml(c.KodeKelas)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm">
+          <h3 class="font-extrabold text-emerald-950 mb-3">📋 Daftar Tugas (${g.tasks.length})</h3>
+          <div class="space-y-2">
+            ${g.tasks.map(t => `
+              <div class="p-3 rounded-xl bg-amber-50/50 border border-amber-200 flex justify-between items-center text-sm">
+                <div>
+                  <div class="font-bold text-slate-900">${escHtml(t.JudulTugas)}</div>
+                  <div class="text-xs text-slate-600">Materi: ${escHtml(t.Materi)}</div>
+                </div>
+                <span class="px-2.5 py-1 rounded-lg bg-white border border-amber-200 text-xs font-bold text-amber-800">${escHtml(t.Tenggat)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- TABEL PERKEMBANGAN SISWA -->
+      <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm overflow-x-auto">
+        <h3 class="font-extrabold text-emerald-950 mb-3">Laporan Perkembangan Siswa</h3>
+        <table class="w-full text-sm text-left border-collapse">
+          <thead>
+            <tr class="bg-emerald-900 text-white">
+              <th class="p-3 rounded-tl-xl">Nama Siswa</th>
+              <th class="p-3">Level</th>
+              <th class="p-3">Kelancaran</th>
+              <th class="p-3">Tajwid</th>
+              <th class="p-3">Tahsin</th>
+              <th class="p-3">Nilai Rata²</th>
+              <th class="p-3 rounded-tr-xl">Progress</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            ${g.students.map(s => {
+              const avg = Math.round(((Number(s.SkorKelancaran)||0)+(Number(s.SkorTajwid)||0)+(Number(s.SkorTahsin)||0))/3);
+              return `
+                <tr class="hover:bg-emerald-50/50">
+                  <td class="p-3 font-bold text-slate-900">${escHtml(s.Nama)}</td>
+                  <td class="p-3">Lv ${s.LevelAwal}</td>
+                  <td class="p-3">${s.SkorKelancaran || 0}%</td>
+                  <td class="p-3">${s.SkorTajwid || 0}%</td>
+                  <td class="p-3">${s.SkorTahsin || 0}%</td>
+                  <td class="p-3 font-extrabold text-emerald-800">${avg}</td>
+                  <td class="p-3">${s.ProgressHarian || 0}%</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- DAFTAR SETORAN BACAAN -->
+      <div class="bg-white rounded-2xl p-5 border border-emerald-100 shadow-sm space-y-4">
+        <h3 class="font-extrabold text-emerald-950">🎙️ Pemeriksaan Setoran Bacaan Siswa</h3>
+        ${g.submissions.length === 0 ? `<p class="text-sm text-slate-500">Belum ada rekaman setoran yang masuk. Coba kirim dari menu <b>Setoran Bacaan</b>.</p>` :
+          g.submissions.map((sub, idx) => `
+            <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 space-y-3">
+              <div class="flex flex-wrap justify-between items-center gap-2">
+                <div>
+                  <span class="font-bold text-slate-900">${escHtml(sub.NamaSiswa)}</span>
+                  <span class="text-xs text-emerald-700 font-semibold ml-2">${escHtml(sub.SurahAyat)}</span>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${sub.Status === 'Sudah Dinilai' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${escHtml(sub.Status)}</span>
+              </div>
+              ${sub.AudioBase64_atau_Link && sub.AudioBase64_atau_Link.startsWith('data:audio') ?
+                `<audio controls playsinline src="${sub.AudioBase64_atau_Link}" class="w-full h-10"></audio>` :
+                `<div class="text-xs text-slate-500 italic">Audio tersimpan pada sesi sebelumnya.</div>`
+              }
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <input id="note-${idx}" type="text" value="${escHtml(sub.CatatanGuru || '')}" placeholder="Catatan kesalahan bacaan..." class="sm:col-span-2 px-3 py-2 rounded-xl border border-slate-300 text-sm" />
+                <input id="grade-${idx}" type="number" min="0" max="100" value="${escHtml(sub.NilaiGuru || '')}" placeholder="Nilai (0-100)" class="px-3 py-2 rounded-xl border border-slate-300 text-sm" />
+              </div>
+              <button onclick="handleGradeSubmission(${idx})" class="px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold text-xs">Simpan Nilai & Catatan</button>
+            </div>
+          `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function handleCreateClass() {
+  const namaKelas = document.getElementById('in-nama-kelas').value.trim();
+  const namaGuru = document.getElementById('in-nama-guru').value.trim();
+  if (!namaKelas) return showToast('Mohon isi nama kelas.');
+  appState.guruData.classes.push({
+    KodeKelas: 'KLS-' + Math.floor(100 + Math.random() * 900),
+    NamaKelas: namaKelas,
+    NamaGuru: namaGuru || 'Guru',
+    TanggalDibuat: getTodayStr()
+  });
+  persistState();
+  showToast('✓ Kelas baru berhasil dibuat.');
+  navigateTo('guru');
+}
+
+function handleAddStudent() {
+  const nama = document.getElementById('in-nama-siswa').value.trim();
+  const levelAwal = parseInt(document.getElementById('in-level-siswa').value, 10);
+  if (!nama) return showToast('Mohon isi nama siswa.');
+  appState.guruData.students.push({
+    UserID: 'USR-' + Date.now(),
+    Nama: nama,
+    LevelAwal: levelAwal,
+    SkorHuruf: 20,
+    SkorHarakat: 15,
+    SkorKelancaran: 20,
+    SkorMakhraj: 15,
+    SkorTajwid: 10,
+    SkorTahsin: 10,
+    ProgressHarian: 0
+  });
+  persistState();
+  showToast('✓ Peserta didik berhasil ditambahkan.');
+  navigateTo('guru');
+}
+
+function handleCreateTask() {
+  const judul = document.getElementById('in-judul-tugas').value.trim();
+  const tenggat = document.getElementById('in-tenggat-tugas').value.trim();
+  if (!judul) return showToast('Mohon isi judul tugas.');
+  appState.guruData.tasks.unshift({
+    IDTugas: 'TGS-' + Date.now(),
+    KodeKelas: (appState.guruData.classes[0] || {}).KodeKelas || 'UMUM',
+    JudulTugas: judul,
+    Materi: judul,
+    Tenggat: tenggat || 'Pekan Ini'
+  });
+  persistState();
+  showToast('✓ Tugas baru berhasil ditambahkan.');
+  navigateTo('guru');
+}
+
+function handleGradeSubmission(idx) {
+  const catatanGuru = document.getElementById(`note-${idx}`).value;
+  const nilaiGuru = document.getElementById(`grade-${idx}`).value;
+  appState.guruData.submissions[idx].CatatanGuru = catatanGuru;
+  appState.guruData.submissions[idx].NilaiGuru = nilaiGuru;
+  appState.guruData.submissions[idx].Status = 'Sudah Dinilai';
+  persistState();
+  showToast('✓ Nilai dan catatan guru berhasil disimpan.');
+  navigateTo('guru');
+}
+
+/* ============================================================================
+ * 11. HALAMAN PENGATURAN, UPLOAD LOGO, & BACKUP DATA HTML5
+ * ============================================================================ */
+function renderPengaturanPage() {
+  return `
+    <div class="space-y-6">
+      <div>
+        <h2 class="text-2xl font-extrabold text-emerald-950">⚙️ Pengaturan Aplikasi</h2>
+        <p class="text-slate-600 text-sm">Sesuaikan tampilan, logo, suara, serta cadangkan data belajar Anda secara mandiri.</p>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 border border-emerald-100 shadow-sm space-y-5 max-w-2xl">
+        <div>
+          <label class="block font-bold text-sm text-slate-800 mb-1">Nama Pengguna</label>
+          <input id="set-nama" type="text" value="${escHtml(appState.user.Nama)}" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 font-semibold" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-sm text-slate-800 mb-1">Ukuran Tulisan Arab (Ramah Lansia): <span id="lbl-arab-scale">${Math.round(appState.arabScale * 100)}%</span></label>
+          <input type="range" min="0.85" max="1.5" step="0.05" value="${appState.arabScale}"
+            oninput="appState.arabScale=parseFloat(this.value); document.documentElement.style.setProperty('--arab-scale', this.value); document.getElementById('lbl-arab-scale').textContent=Math.round(this.value*100)+'%';"
+            class="w-full accent-emerald-700 h-3" />
+          <div class="mt-2 p-3 rounded-xl bg-emerald-50 text-center arabic-text text-emerald-950">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-sm text-slate-800 mb-1">Kecepatan Audio Bacaan</label>
+          <select id="set-speed" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 font-semibold">
+            <option value="0.75" ${appState.audioRate == 0.75 ? 'selected' : ''}>0.75x – Pelan & Sangat Jelas</option>
+            <option value="1" ${appState.audioRate == 1 ? 'selected' : ''}>1.0x – Normal</option>
+            <option value="1.25" ${appState.audioRate == 1.25 ? 'selected' : ''}>1.25x – Agak Cepat</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-sm text-slate-800 mb-1">Target Latihan Harian</label>
+          <select id="set-target" class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 font-semibold">
+            ${[5, 10, 15, 30].map(m => `<option value="${m}" ${appState.user.TargetMenit == m ? 'selected' : ''}>${m} Menit / Hari</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="flex flex-wrap gap-3 pt-2">
+          <button onclick="saveSettings()" class="btn-large px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white text-sm">💾 Simpan Pengaturan</button>
+          <button onclick="openPlacementModal()" class="btn-large px-5 py-3 bg-amber-100 text-amber-900 text-sm">🎯 Ulangi Tes Awal</button>
+        </div>
+
+        <!-- GANTI LOGO DARI PERANGKAT -->
+        <div class="pt-4 border-t border-slate-100 space-y-3">
+          <div class="font-bold text-sm text-slate-800">🖼️ Logo Aplikasi (Dari Galeri HP / PC)</div>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="logo-slot w-16 h-16 rounded-full overflow-hidden border-2 border-amber-400 bg-emerald-50 flex items-center justify-center shrink-0">
+              ${getLogoMarkup()}
+            </div>
+            <label class="cursor-pointer px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 font-bold text-xs">
+              📁 Pilih Gambar Logo
+              <input type="file" accept="image/*" onchange="handleLogoUpload(event)" class="hidden" />
+            </label>
+            <button onclick="resetCustomLogo()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">Kembalikan Logo Bawaan</button>
+          </div>
+        </div>
+
+        <!-- BACKUP & RESTORE DATA HTML5 -->
+        <div class="pt-4 border-t border-slate-100 space-y-3">
+          <div class="font-bold text-sm text-slate-800">💾 Cadangkan & Pulihkan Data Belajar (JSON)</div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="exportBackupJSON()" class="px-4 py-2.5 rounded-xl bg-slate-800 text-white font-bold text-xs">⬇️ Ekspor Data (.json)</button>
+            <label class="cursor-pointer px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs">
+              ⬆️ Impor Data (.json)
+              <input type="file" accept=".json,application/json" onchange="importBackupJSON(event)" class="hidden" />
+            </label>
+            <button onclick="handleResetAppData()" class="px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 font-bold text-xs">
+              ${appState.confirmResetStep ? '⚠ Klik Sekali Lagi untuk Hapus Semua Data' : '🗑️ Reset Progres'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveSettings() {
+  appState.user.Nama = document.getElementById('set-nama').value.trim() || "Sahabat Qur'an";
+  appState.audioRate = parseFloat(document.getElementById('set-speed').value);
+  appState.user.TargetMenit = parseInt(document.getElementById('set-target').value, 10);
+  persistState();
+  showToast('✓ Pengaturan berhasil disimpan.');
+}
+
+function handleLogoUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      localStorage.setItem('ngaji_quran_custom_logo', e.target.result);
+      refreshAllLogoSlots();
+      showToast('✓ Logo aplikasi berhasil diperbarui!');
+    } catch (err) {
+      showToast('⚠ Ukuran gambar terlalu besar. Gunakan gambar di bawah 1 MB.');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetCustomLogo() {
+  try { localStorage.removeItem('ngaji_quran_custom_logo'); } catch (e) {}
+  refreshAllLogoSlots();
+  showToast('Logo dikembalikan ke bawaan.');
+}
+
+function exportBackupJSON() {
+  const dataStr = JSON.stringify({
+    exportedAt: new Date().toISOString(),
+    user: appState.user,
+    audioRate: appState.audioRate,
+    arabScale: appState.arabScale,
+    guruData: appState.guruData
+  }, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `backup-ngaji-quran-${getTodayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ File cadangan JSON berhasil diunduh.');
+}
+
+function importBackupJSON(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (parsed.user) appState.user = Object.assign(appState.user, parsed.user);
+      if (parsed.guruData) appState.guruData = Object.assign(appState.guruData, parsed.guruData);
+      if (parsed.audioRate) appState.audioRate = parsed.audioRate;
+      if (parsed.arabScale) {
+        appState.arabScale = parsed.arabScale;
+        document.documentElement.style.setProperty('--arab-scale', appState.arabScale);
+      }
+      persistState();
+      showToast('✓ Data cadangan berhasil dipulihkan!');
+      navigateTo('beranda');
+    } catch (err) {
+      showToast('⚠ File JSON tidak valid.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function handleResetAppData() {
+  if (!appState.confirmResetStep) {
+    appState.confirmResetStep = true;
+    navigateTo('pengaturan');
+    return;
+  }
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  appState = getDefaultState();
+  document.documentElement.style.setProperty('--arab-scale', 1.0);
+  persistState();
+  showToast('Semua data telah direset ke awal.');
+  navigateTo('beranda');
+}
+
+function openPlacementModal() {
+  document.getElementById('modal-placement').classList.remove('hidden');
+}
+
+function closePlacementModal() {
+  appState.user.hasDonePlacement = true;
+  persistState();
+  document.getElementById('modal-placement').classList.add('hidden');
+}
+
+function applyPlacement(opt) {
+  const map = {
+    A: { lv: 1, msg: 'Kita mulai dari Level 1 (Mengenal Huruf Hijaiyah). Semangat!' },
+    B: { lv: 2, msg: 'Kita mulai dari Level 2 (Belajar Harakat & Menyambung Huruf).' },
+    C: { lv: 5, msg: 'Kita mulai dari Level 5 (Program Lancar Mengaji).' },
+    D: { lv: 8, msg: 'Kita mulai dari Level 8 (Tajwid Dasar).' },
+    E: { lv: 7, msg: "Kita mulai dari Level 7 (Program Tahsin Al-Qur'an)." }
+  };
+  const pick = map[opt] || map.A;
+  appState.user.LevelAwal = pick.lv;
+  appState.user.hasDonePlacement = true;
+  persistState();
+  document.getElementById('modal-placement').classList.add('hidden');
+  showToast(pick.msg);
+  navigateTo('belajar', pick.lv);
+}
+
+/* ============================================================================
+ * 12. INISIALISASI APLIKASI HTML5
+ * ============================================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+  refreshAllLogoSlots();
+  loadLocalState();
+  updateSidebarInfo();
+  navigateTo('beranda');
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      audioEngine.voices = window.speechSynthesis.getVoices();
+    };
+  }
+
+  const firstGestureUnlock = () => {
+    unlockAudioEngine();
+    document.removeEventListener('touchstart', firstGestureUnlock);
+    document.removeEventListener('click', firstGestureUnlock);
+  };
+  document.addEventListener('touchstart', firstGestureUnlock, { passive: true });
+  document.addEventListener('click', firstGestureUnlock, { passive: true });
+
+  const audioEl = getQuranAudioEl();
+  if (audioEl) {
+    audioEl.addEventListener('timeupdate', () => {
+      const curEl = document.getElementById('gap-time-cur');
+      const durEl = document.getElementById('gap-time-dur');
+      const seekEl = document.getElementById('gap-seek');
+      if (curEl) curEl.textContent = formatAudioTime(audioEl.currentTime);
+      if (durEl) durEl.textContent = formatAudioTime(audioEl.duration);
+      if (seekEl && audioEl.duration) {
+        seekEl.value = Math.round((audioEl.currentTime / audioEl.duration) * 100);
+      }
+    });
+    audioEl.addEventListener('ended', () => {
+      if (!audioEl.loop) {
+        showGlobalAudioBar(audioEngine.lastLabel, false);
+      }
+    });
+  }
+
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'microphone' }).then((perm) => {
+      if (perm.state === 'granted') {
+        audioEngine.micPermitted = true;
+        updateMicStatusUI('ok', 'Mikrofon sudah diizinkan. Audio & rekaman siap digunakan.');
+      } else if (perm.state === 'denied') {
+        updateMicStatusUI('error', 'Izin mikrofon terblokir di browser. Buka pengaturan situs browser untuk mengizinkan.');
+      }
+    }).catch(() => {});
+  }
+
+  if (!appState.user.hasDonePlacement) {
+    setTimeout(openPlacementModal, 600);
+  }
+});
+</script>
+</body>
+</html>
